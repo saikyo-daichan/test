@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ヤニブ (Yaniv) v17.6 Ticket System</title>
+<title>ヤニブ (Yaniv) v17.7 Perfect System</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -13,24 +13,18 @@
     #portrait-warning { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background-color: #1b5e20; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
     .rotate-icon { font-size: 70px; margin-bottom: 20px; animation: rotatePhone 2s infinite ease-in-out; }
     @keyframes rotatePhone { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(-90deg); } }
-    
-    /* 共通クラス */
-    .flex-center { display: flex; justify-content: center; align-items: center; }
-    .flex-between { display: flex; justify-content: space-between; align-items: center; }
-    
-    /* UIパーツ */
+
     .coin-ui { position: absolute; top: 15px; right: 15px; display: flex; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px; border: 2px solid #d4af37; font-weight: bold; color: white; font-size: 14px; z-index: 500; }
     .coin-g { width: 20px; height: 20px; background: radial-gradient(circle, #ffd700, #b8860b); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 12px; margin-right: 6px; border: 1px solid #fff; }
     .item-icon { margin-left: 10px; margin-right: 4px; font-size: 16px; }
-    
+
     #toast-notification { position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); color: #fff; font-weight: bold; font-size: 16px; padding: 15px 30px; border-radius: 30px; display: none; z-index: 10000; border: 2px solid #ffeb3b; text-align: center; line-height: 1.4; white-space: nowrap; }
     @keyframes floatUp { 0% { top: 30%; opacity: 0; transform: translate(-50%, -50%) scale(0.8); } 10% { top: 20%; opacity: 1; transform: translate(-50%, -50%) scale(1.1); } 15% { transform: translate(-50%, -50%) scale(1); } 80% { top: 20%; opacity: 1; } 100% { top: 10%; opacity: 0; } }
 
-    /* メニュー系 */
     .menu-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; padding: 20px; position: relative; }
     .menu-screen h1 { font-size: 42px; color: #ffeb3b; text-shadow: 2px 2px 0px #000; margin: 0 0 5px 0; letter-spacing: 2px; }
     .menu-subtitle { font-size: 14px; color: #a5d6a7; margin-bottom: 15px; font-weight: bold; width: 100%; max-width: 250px; text-align: center; }
-    
+
     .xp-bar-container { width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; margin-top: 5px; overflow: hidden; border: 1px solid #388e3c; }
     .xp-bar-fill { height: 100%; background: #4caf50; width: 0%; transition: width 0.3s ease; }
     .level-up-pop { animation: lvPop 0.8s forwards; color: #ffeb3b !important; }
@@ -39,53 +33,50 @@
     .menu-panel { background-color: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; border: 2px solid #388e3c; width: 100%; max-width: 350px; text-align: left; overflow-y: auto; max-height: 80vh; }
     .menu-panel h3 { margin-top: 0; color: #ffeb3b; text-align: center; margin-bottom: 15px; }
     .setting-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
-    
-    /* ボタン系 */
+
     .btn { font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: transform 0.1s, filter 0.1s; text-align: center; }
     .btn:active { transform: scale(0.95); filter: brightness(0.9); }
     .btn-large { padding: 12px 20px; font-size: 16px; background-color: #ffeb3b; color: #1b5e20; box-shadow: 0 4px 0 #c51162; width: 80%; max-width: 280px; margin-bottom: 10px; margin-left:auto; margin-right:auto; display:block; }
     .btn-large:active { transform: translateY(4px); box-shadow: none; }
-    
+
     .btn-green { background-color: #4caf50; color: white; padding: 12px; font-size: 16px; width: 100%; margin-top: 10px; }
     .btn-blue { background-color: #2196f3; color: white; padding: 12px; font-size: 16px; width: 100%; margin-top: 10px; }
     .btn-red { background-color: #f44336; color: white; padding: 12px; font-size: 16px; width: 100%; margin-top: 10px; }
     .btn-gray { background-color: #e0e0e0; color: #333; padding: 10px; font-size: 14px; width: 100%; margin-top: 10px; border-radius: 5px; }
 
     input[type="text"], input[type="number"], select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 100%; font-size: 14px; color: #000; }
-    
-    /* ロビー関連 */
+
     .room-id-box { background:#fff; color:#000; padding:12px; text-align:center; border-radius:8px; margin-bottom:15px; font-weight:bold; font-size:16px; border: 3px dashed #ffeb3b; }
     .player-slot { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-bottom:8px; }
-    
-    /* アイコン・カードプレビュー */
+
     .icon { background-color: rgba(255,255,255,0.2); border-radius: 50%; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
     .icon img { width: 100%; height: 100%; object-fit: cover; }
     .icon-small { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: rgba(255,255,255,0.2); }
     .icon-small img { width: 100%; height: 100%; object-fit: cover; }
-    
+    .icon-preview-box { width: 48px; height: 48px; background-color: rgba(255,255,255,0.15); border: 2px solid #ffeb3b; border-radius: 50%; display: flex; justify-content: center; align-items: center; overflow: hidden; flex-shrink: 0; margin-left: auto; }
+    .icon-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+
     #card-back-preview { width: 40px; height: 60px; border-radius: 4px; margin-left: auto; flex-shrink: 0; border: 2px solid white; background-size: cover; background-position: center; }
     .back-red { background-color: #b71c1c; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px); }
     .back-blue { background-color: #0d47a1; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px); }
     .back-black { background-color: #212121; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px); }
     .back-img { background-size: cover; background-position: center; }
 
-    /* チャットUI */
     #chat-display-container { position: fixed; top: 40px; left: 10px; z-index: 9999; pointer-events: none; display: flex; flex-direction: column; gap: 6px; width: 250px; }
     .chat-msg { background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: white; border: 1px solid #4caf50; animation: chatSlideIn 0.3s ease-out, chatFadeOut 0.5s ease-in 4.5s forwards; }
     @keyframes chatSlideIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
     @keyframes chatFadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-10px); } }
-    
     #chat-toggle-btn { position: fixed; bottom: 15px; left: 15px; background: #ffeb3b; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; z-index: 1000; border: 2px solid #fbc02d; color:#000; cursor:pointer;}
     #chat-input-container { position: fixed; bottom: 70px; left: 15px; background: rgba(0,0,0,0.85); padding: 10px; border-radius: 12px; display: flex; gap: 5px; z-index: 1000; border: 2px solid #ffeb3b; }
+    
     #in-game-exit-btn { position: absolute; top: 10px; left: 15px; font-size: 20px; cursor: pointer; z-index: 500; background: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #f44336; }
 
-    /* H&L */
-    .hl-card-slot { width: 100px; height: 150px; background: white; border-radius: 10px; margin: 20px auto; border: 4px solid #ffeb3b; display: flex; justify-content: center; align-items: center; position: relative; }
+    .hl-card-slot { width: 100px; height: 150px; background: white; border-radius: 10px; margin: 20px auto; border: 4px solid #ffeb3b; display: flex; justify-content: center; align-items: center; position: relative; font-size:50px; font-weight:bold; color:black;}
 
-    /* ショップ＆ガチャ */
     .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
     .shop-item { background: rgba(255,255,255,0.1); border: 2px solid #ffeb3b; border-radius: 10px; padding: 15px 5px; text-align: center; }
     .shop-item.full-width { grid-column: 1 / -1; border-color:#f44336; background:rgba(244,67,54,0.1); }
+    
     #gacha-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
     .gacha-box { font-size: 80px; animation: shake 0.5s infinite; margin-bottom: 20px; }
     @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(15deg); } 50% { transform: rotate(0deg); } 75% { transform: rotate(-15deg); } 100% { transform: rotate(0deg); } }
@@ -93,28 +84,15 @@
     .gacha-result img { width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 4px solid #ffeb3b; }
     @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
 
-    /* 履歴UI */
     .history-item { background: rgba(0,0,0,0.3); border-left: 4px solid #ffeb3b; padding: 10px; border-radius: 4px; margin-bottom: 10px; font-size: 12px; position: relative; }
     .history-delete { position: absolute; top: 5px; right: 5px; color: #f44336; background: none; border: none; font-size: 18px; font-weight: bold; cursor: pointer; padding: 0; line-height: 1; }
     .history-table { width: 100%; border-collapse: collapse; }
     .history-table td { padding: 4px 2px; border-bottom: 1px solid rgba(255,255,255,0.1); }
 
-    /* モーダル＆演出 */
     #event-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10001; justify-content:center; align-items:center; }
     #event-text { font-size:55px; font-weight:bold; color:#fff; animation: eventPop 0.5s forwards; text-align: center; }
     @keyframes eventPop { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 
-    #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
-    #result-modal { background-color: #37474f; padding: 15px; border-radius: 12px; text-align: center; width: 95%; max-width: 450px; border: 2px solid #546e7a; }
-    #result-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
-    #result-table th, #result-table td { padding: 6px 4px; border-bottom: 1px solid #546e7a; }
-    .me-row { background-color: rgba(255, 235, 59, 0.15) !important; outline: 2px solid #ffeb3b; outline-offset: -2px; font-weight: bold; }
-
-    /* カスタムダイアログ */
-    #custom-confirm-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:20000; justify-content:center; align-items:center; }
-    .confirm-box { background:#37474f; padding:20px; border-radius:12px; text-align:center; width:80%; max-width:300px; border:2px solid #546e7a; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-
-    /* ゲーム盤面 */
     #game-container { display: none; flex-direction: column; height: 100dvh; width: 100vw; padding: 5px; }
     #header-area { display: flex; justify-content: space-between; align-items: center; padding: 5px 15px; height: 35px; margin-left: 50px; }
     #game-table { display: grid; grid-template-columns: minmax(80px, 140px) 1fr minmax(80px, 140px); grid-template-rows: 120px 1fr 160px; align-items: center; justify-items: center; width: 100%; max-width: 1000px; margin: 0 auto; gap: 5px; flex: 1; }
@@ -147,10 +125,17 @@
     .card-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 22px; font-weight: bold; }
     .card.selected { transform: translateY(-10px) !important; border: 2px solid #ffeb3b; }
     
-    .vp-score { color: #ffeb3b; font-weight: bold; } .sum-text { font-weight: normal; }
-    
     .action-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%) translateY(10px); background-color: #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; opacity: 0; pointer-events: none; z-index: 100; transition: opacity 0.3s, transform 0.3s; }
     .action-badge.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
+
+    #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+    #result-modal { background-color: #37474f; padding: 15px; border-radius: 12px; text-align: center; width: 95%; max-width: 450px; border: 2px solid #546e7a; }
+    #result-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+    #result-table th, #result-table td { padding: 6px 4px; border-bottom: 1px solid #546e7a; }
+    .me-row { background-color: rgba(255, 235, 59, 0.15) !important; outline: 2px solid #ffeb3b; outline-offset: -2px; font-weight: bold; }
+
+    #custom-confirm-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:20000; justify-content:center; align-items:center; }
+    .confirm-box { background:#37474f; padding:20px; border-radius:12px; text-align:center; width:80%; max-width:300px; border:2px solid #546e7a; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
 
     @media (max-width: 768px) {
         #game-table { grid-template-columns: 55px 1fr 55px; grid-template-rows: 85px 1fr 140px; padding: 0 2px; }
@@ -224,7 +209,7 @@
 </div>
 
 <div id="hl-screen" class="menu-screen" style="display: none;">
-    <div class="coin-ui"><div class="coin-g">G</div><span id="hl-coins">0</span></div>
+    <div class="coin-ui"><div class="coin-g">G</div><span id="hl-coins" style="margin-right:10px;">0</span></div>
     <div class="menu-panel" style="max-width: 350px; text-align:center;">
         <h3 style="color:#ffeb3b;">HIGH & LOW</h3>
         <div style="font-size:12px; color:#a5d6a7; margin-bottom:15px; font-weight:bold;">自己ベスト: <span id="hl-max-streak">0</span> 連勝</div>
@@ -257,7 +242,11 @@
 </div>
 
 <div id="shop-screen" class="menu-screen" style="display: none;">
-    <div class="coin-ui"><div class="coin-g">G</div><span id="shop-coins" style="margin-right:10px;">0</span><div class="item-icon">🎟️</div><span id="shop-tickets">0</span></div>
+    <div class="coin-ui">
+        <div class="coin-g">G</div><span id="shop-coins" style="margin-right:10px;">0</span>
+        <div class="item-icon">💎</div><span id="shop-diamonds" style="margin-right:10px;">0</span>
+        <div class="item-icon">🎟️</div><span id="shop-tickets">0</span>
+    </div>
     <div class="menu-panel" style="max-width: 350px; padding:15px;">
         <h3>ショップ</h3>
         <div class="shop-grid">
@@ -298,7 +287,7 @@
             <button class="btn" id="tab-history" style="width:32%; background:#ff9800; color:white; padding:8px; border-radius:8px;" onclick="showStatsTab('history')">履歴</button>
         </div>
         <div id="stats-content" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; text-align:left; font-size:14px; border:1px solid #546e7a; max-height:40vh; overflow-y:auto;"></div>
-        <button class="btn btn-gray" onclick="switchScreen('main-menu')">戻る</button>
+        <button class="btn btn-gray" onclick="switchScreen('main-menu')" style="margin-top: 15px;">戻る</button>
     </div>
 </div>
 
@@ -392,30 +381,30 @@
 </div>
 
 <script>
-    const $ = id => document.getElementById(id);
+    const getEl = id => document.getElementById(id);
 
     // --- 画面遷移 ---
     function switchScreen(screenId) {
         try {
             document.querySelectorAll('.menu-screen').forEach(el => el.style.display = 'none');
-            const gc = $('game-container'); if(gc) gc.style.display = 'none';
-            const mo = $('modal-overlay'); if(mo) mo.style.display = 'none';
-            const target = $(screenId); if(target) target.style.display = 'flex';
+            const gc = getEl('game-container'); if(gc) gc.style.display = 'none';
+            const mo = getEl('modal-overlay'); if(mo) mo.style.display = 'none';
+            const target = getEl(screenId); if(target) target.style.display = 'flex';
             
-            const chatBtn = $('chat-toggle-btn'); const chatInput = $('chat-input-container'); const exitBtn = $('in-game-exit-btn');
+            const chatBtn = getEl('chat-toggle-btn'); const chatInput = getEl('chat-input-container'); const exitBtn = getEl('in-game-exit-btn');
             if (exitBtn) exitBtn.style.display = (screenId === 'game-container') ? 'flex' : 'none';
             if (chatBtn && chatInput) {
                 if ((screenId === 'room-waiting-screen' || screenId === 'game-container') && !isOfflineMode) { chatBtn.style.display = 'flex'; } 
                 else { chatBtn.style.display = 'none'; chatInput.style.display = 'none'; }
             }
-            if (screenId === 'room-join-screen') { const joinInp = $('join-room-id'); if(joinInp) joinInp.value = ''; }
-        } catch(e) { console.error("switchScreen error:", e); }
+            if (screenId === 'room-join-screen') { const joinInp = getEl('join-room-id'); if(joinInp) joinInp.value = ''; }
+        } catch(e) { console.error("switchScreen err:", e); }
     }
 
     // --- カスタムダイアログ ---
     let confirmAction = null;
-    function showCustomConfirm(msg, action) { $('custom-confirm-msg').innerHTML = msg; confirmAction = action; $('custom-confirm-overlay').style.display = 'flex'; }
-    function closeCustomConfirm() { $('custom-confirm-overlay').style.display = 'none'; confirmAction = null; }
+    function showCustomConfirm(msg, action) { getEl('custom-confirm-msg').innerHTML = msg; confirmAction = action; getEl('custom-confirm-overlay').style.display = 'flex'; }
+    function closeCustomConfirm() { getEl('custom-confirm-overlay').style.display = 'none'; confirmAction = null; }
     function executeCustomConfirm() { if(confirmAction) confirmAction(); closeCustomConfirm(); }
     function confirmLeaveRoom() { showCustomConfirm("本当に退出して戻りますか？", leaveRoom); }
     function confirmLeaveGame() { showCustomConfirm("本当にゲームを終了して戻りますか？<br><span style='font-size:12px;color:#f44336;'>(進行状況は破棄されます)</span>", leaveRoom); }
@@ -435,7 +424,6 @@
 
     const iconData = { 'icon_default.png': 'デフォルト', 'icon_kaeru.png': 'かえる', 'icon_kyuuri.png': 'きゅうり', 'icon_yuuto.png': 'ゆうと', 'icon_pien.png': 'ぴえん', 'icon_zombie.png': 'ゾンビ', 'icon_happy.png': 'ハッピー', 'icon_piero.png': 'ピエロ', 'icon_ringo.png': 'りんご', 'icon_gun.png': 'ガンナー', 'icon_kaeruman.png': 'マッチョ', 'icon_miko.png': '巫女', 'icon_birthday.png': 'ケーキ', 'icon_hugu.png': 'ふぐ', 'icon_tekira.png': 'テキーラ', 'icon_tekira2.png': 'テキーラ2', 'icon_sanchan.png': '冷やし中華', 'icon_dice.png': 'サイコロ', 'icon_oni.png': '鬼 (限定)' };
     const cardBackData = { 'back-red': '色: 赤', 'back-blue': '色: 青', 'back-black': '色: 黒', 'card_kaeru.png': 'かえる', 'card_pien.png': 'ぴえん', 'card_zombie.png': 'ゾンビ', 'card_piero.png': 'ピエロ', 'card_ringo.png': 'リンゴ', 'card_kaeruman.png': 'マッチョ', 'card_star.png': '星', 'card_miko.png': '巫女', 'card_hatena.png': '？？？' };
-
     const suits = ['♠', '♥', '♦', '♣']; const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
     // --- 変数・セーブデータ読み込み ---
@@ -467,8 +455,7 @@
     ];
 
     let activePlayers = []; let deck = []; let discardSets = []; let selectedCards = []; let cardIdCounter = 0;
-    let currentTurn = 0; let gameEnded = false; let firstPlayer = 0; 
-    let currentRound = 1; let MAX_ROUNDS = 5; let modalActionState = 'next_round'; 
+    let currentTurn = 0; let gameEnded = false; let firstPlayer = 0; let currentRound = 1; let MAX_ROUNDS = 5; let modalActionState = 'next_round'; 
     let ruleType = "KD"; let customLose = 1; let customAsaf = 2; let customAllLose = false;
     let isOfflineMode = false; let isOniMode = false; let oniModeFailed = false;
     let peer = null; let isHost = true; let hostConnection = null; let guestConnections = []; let myNetworkId = 0; 
@@ -477,41 +464,41 @@
     // --- 初期起動処理 ---
     window.onload = () => {
         try {
-            $('my-name-input').value = myName; $('uid-display').textContent = myUid;
-            refreshBackSelect(); $('back-color-select').value = myCardBack; updateCardBack(myCardBack);
-            refreshIconSelect(); $('icon-select').value = myIconStr; updatePlayerIcon(myIconStr);
+            getEl('my-name-input').value = myName; getEl('uid-display').textContent = myUid;
+            refreshBackSelect(); getEl('back-color-select').value = myCardBack; updateCardBack(myCardBack);
+            refreshIconSelect(); getEl('icon-select').value = myIconStr; updatePlayerIcon(myIconStr);
             updateCurrencyUI(); updateLevelUI();
-            $('chat-input-text').addEventListener('keypress', function(e) { if (e.key === 'Enter') submitChatMessage(); });
+            getEl('chat-input-text').addEventListener('keypress', function(e) { if (e.key === 'Enter') submitChatMessage(); });
             treasureTimerInter = setInterval(updateTreasureTimer, 1000); updateTreasureTimer();
-        } catch(e) { console.error("onload error:", e); }
+        } catch(e) { console.error("onload err:", e); }
     };
 
     // --- 汎用UI更新 ---
     function showToast(msg, color="#fff") {
-        const toast = $('toast-notification'); if(!toast) return;
+        const toast = getEl('toast-notification'); if(!toast) return;
         toast.innerHTML = `<span style="color:${color};">${msg}</span>`; toast.style.display = 'block'; toast.style.animation = 'none'; void toast.offsetWidth; toast.style.animation = 'floatUp 3.5s ease-out forwards'; setTimeout(() => { toast.style.display = 'none'; }, 3500);
     }
 
     function updateLevelUI() {
         try {
             myLevelObj = calcLevel(userXp);
-            if($('menu-level-display')) $('menu-level-display').textContent = myLevelObj.level;
-            if($('menu-next-xp')) $('menu-next-xp').textContent = myLevelObj.next - userXp;
+            const disp = getEl('menu-level-display'); if(disp) disp.textContent = myLevelObj.level;
+            const nxt = getEl('menu-next-xp'); if(nxt) nxt.textContent = myLevelObj.next - userXp;
             let progress = ((userXp - myLevelObj.base) / (myLevelObj.next - myLevelObj.base)) * 100;
-            if($('menu-xp-bar')) $('menu-xp-bar').style.width = progress + '%';
-            if($('stats-lv')) { $('stats-lv').textContent = myLevelObj.level; $('stats-next-xp').textContent = myLevelObj.next - userXp; $('stats-xp-bar').style.width = progress + '%'; }
+            const bar = getEl('menu-xp-bar'); if(bar) bar.style.width = progress + '%';
+            if(getEl('stats-lv')) { getEl('stats-lv').textContent = myLevelObj.level; getEl('stats-next-xp').textContent = myLevelObj.next - userXp; getEl('stats-xp-bar').style.width = progress + '%'; }
             if(players && players[0]) players[0].level = myLevelObj.level;
         } catch(e) { console.error("updateLevelUI err", e); }
     }
 
     function updateCurrencyUI() {
-        if($('menu-coins')) $('menu-coins').textContent = userCoins;
-        if($('shop-coins')) $('shop-coins').textContent = userCoins;
-        if($('hl-coins')) $('hl-coins').textContent = userCoins;
-        if($('menu-diamonds')) $('menu-diamonds').textContent = userDiamonds;
-        if($('shop-diamonds')) $('shop-diamonds').textContent = userDiamonds;
-        if($('menu-tickets')) $('menu-tickets').textContent = oniTickets;
-        if($('shop-tickets')) $('shop-tickets').textContent = oniTickets;
+        if(getEl('menu-coins')) getEl('menu-coins').textContent = userCoins;
+        if(getEl('shop-coins')) getEl('shop-coins').textContent = userCoins;
+        if(getEl('hl-coins')) getEl('hl-coins').textContent = userCoins;
+        if(getEl('menu-diamonds')) getEl('menu-diamonds').textContent = userDiamonds;
+        if(getEl('shop-diamonds')) getEl('shop-diamonds').textContent = userDiamonds;
+        if(getEl('menu-tickets')) getEl('menu-tickets').textContent = oniTickets;
+        if(getEl('shop-tickets')) getEl('shop-tickets').textContent = oniTickets;
     }
 
     function saveUserData() {
@@ -523,7 +510,7 @@
     // --- 宝箱機能 ---
     function updateTreasureTimer() {
         let lastTime = parseInt(localStorage.getItem('yaniv_treasure_time')) || 0; let now = Date.now(); let diff = now - lastTime; let waitTime = 3 * 60 * 60 * 1000;
-        let textEl = $('treasure-text'); if(!textEl) return;
+        let textEl = getEl('treasure-text'); if(!textEl) return;
         if (diff >= waitTime) { textEl.textContent = "タッチ！"; textEl.style.color = "#ffeb3b"; } 
         else { let rem = waitTime - diff; let h = Math.floor(rem / 3600000); let m = Math.floor((rem % 3600000) / 60000); let s = Math.floor((rem % 60000) / 1000); textEl.textContent = `残り ${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; textEl.style.color = "#a5d6a7"; }
     }
@@ -536,19 +523,16 @@
     }
 
     // --- H&L ミニゲーム ---
-    function openHLScreen() {
-        switchScreen('hl-screen'); $('hl-coins').textContent = userCoins; let maxS = parseInt(localStorage.getItem('yaniv_hl_max')) || 0;
-        $('hl-max-streak').textContent = maxS; $('hl-setup').style.display = 'block'; $('hl-play').style.display = 'none'; $('hl-bet-input').value = '';
-    }
+    function openHLScreen() { switchScreen('hl-screen'); getEl('hl-coins').textContent = userCoins; let maxS = parseInt(localStorage.getItem('yaniv_hl_max')) || 0; getEl('hl-max-streak').textContent = maxS; getEl('hl-setup').style.display = 'block'; getEl('hl-play').style.display = 'none'; getEl('hl-bet-input').value = ''; }
     function startHL() {
-        let betInput = parseInt($('hl-bet-input').value);
+        let betInput = parseInt(getEl('hl-bet-input').value);
         if(!betInput || betInput <= 0) return showToast("参加費を入力してください", "#f44336"); if(betInput > userCoins) return showToast("コインが足りません", "#f44336");
         userCoins -= betInput; saveUserData(); hlBet = betInput; hlSuccess = 0; hlCurrentCard = Math.floor(Math.random()*13) + 1;
-        $('hl-setup').style.display = 'none'; $('hl-play').style.display = 'block'; updateHLUI();
+        getEl('hl-setup').style.display = 'none'; getEl('hl-play').style.display = 'block'; updateHLUI();
     }
     function updateHLUI() {
-        $('hl-current-streak').textContent = hlSuccess; let multi = getHLMulti(hlSuccess); $('hl-multi').textContent = multi.toFixed(2); $('hl-current-payout').textContent = Math.floor(hlBet * multi);
-        const centerEl = $('hl-card-display'); centerEl.innerHTML = '';
+        getEl('hl-current-streak').textContent = hlSuccess; let multi = getHLMulti(hlSuccess); getEl('hl-multi').textContent = multi.toFixed(2); getEl('hl-current-payout').textContent = Math.floor(hlBet * multi);
+        const centerEl = getEl('hl-card-display'); centerEl.innerHTML = '';
         let fCard = { id:99, type:'normal', suit:'♠', rank: ranks[hlCurrentCard-1] }; let animCard = createCardElement(fCard, true);
         animCard.style.width = '100px'; animCard.style.height = '150px'; animCard.querySelector('.card-center').style.fontSize = '40px'; animCard.querySelector('.card-corner').style.fontSize = '16px'; centerEl.appendChild(animCard);
     }
@@ -558,9 +542,7 @@
         if(nextCard === hlCurrentCard) { hlCurrentCard = nextCard; updateHLUI(); showToast("DRAW! 同じ数字なのでもう一度！", "#2196f3"); return; }
         let isWin = false; if(choice === 'high' && nextCard > hlCurrentCard) isWin = true; if(choice === 'low' && nextCard < hlCurrentCard) isWin = true;
         hlCurrentCard = nextCard; updateHLUI();
-        if(isWin) { hlSuccess++; playSound('click'); updateHLUI(); } else {
-            playSound('asaf'); setTimeout(() => { showToast(`残念！ ${ranks[nextCard-1]} でした。<br>参加費 ${hlBet}G 没収...`, "#f44336"); openHLScreen(); }, 300);
-        }
+        if(isWin) { hlSuccess++; playSound('click'); updateHLUI(); } else { playSound('asaf'); setTimeout(() => { showToast(`残念！ ${ranks[nextCard-1]} でした。<br>参加費 ${hlBet}G 没収...`, "#f44336"); openHLScreen(); }, 300); }
     }
     function exitHL() {
         let payout = Math.floor(hlBet * getHLMulti(hlSuccess)); userCoins += payout; saveUserData();
@@ -569,20 +551,17 @@
     }
 
     // --- 設定・ショップ・ガチャ ---
-    function refreshIconSelect() { const sel = $('icon-select'); sel.innerHTML = ''; unlockedIcons.forEach(icon => { const opt = document.createElement('option'); opt.value = icon; opt.textContent = iconData[icon] || icon; sel.appendChild(opt); }); }
-    function refreshBackSelect() { const backSel = $('back-color-select'); backSel.innerHTML = ''; unlockedBacks.forEach(key => { const opt = document.createElement('option'); opt.value = key; opt.textContent = cardBackData[key] || key; backSel.appendChild(opt); }); }
-    function toggleCustomRule(val) { $('custom-rule-area').style.display = val === 'CUSTOM' ? 'block' : 'none'; updateLobbyRuleDisplay(); }
+    function refreshIconSelect() { const sel = getEl('icon-select'); sel.innerHTML = ''; unlockedIcons.forEach(icon => { const opt = document.createElement('option'); opt.value = icon; opt.textContent = iconData[icon] || icon; sel.appendChild(opt); }); }
+    function refreshBackSelect() { const backSel = getEl('back-color-select'); backSel.innerHTML = ''; unlockedBacks.forEach(key => { const opt = document.createElement('option'); opt.value = key; opt.textContent = cardBackData[key] || key; backSel.appendChild(opt); }); }
+    function toggleCustomRule(val) { getEl('custom-rule-area').style.display = val === 'CUSTOM' ? 'block' : 'none'; updateLobbyRuleDisplay(); }
     function updateCardBack(val) { 
-        myCardBack = val; const preview = $('card-back-preview'); preview.className = '';
+        myCardBack = val; const preview = getEl('card-back-preview'); preview.className = '';
         if(val.startsWith('back-')) { preview.classList.add('back', val); preview.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'; } 
         else { preview.classList.add('back', 'back-img'); preview.style.backgroundImage = `url('${val}')`; }
     }
-    function updatePlayerIcon(val) { myIconStr = val; $('icon-preview').innerHTML = `<img src="${val}" alt="icon">`; }
-    function saveSettingsAndReturn() { myName = $('my-name-input').value.trim() || "ゲスト"; players[0].name = myName; players[0].icon = `<img src="${myIconStr}">`; players[0].cardBack = myCardBack; saveUserData(); switchScreen('main-menu'); }
+    function updatePlayerIcon(val) { myIconStr = val; getEl('icon-preview').innerHTML = `<img src="${val}" alt="icon">`; }
+    function saveSettingsAndReturn() { myName = getEl('my-name-input').value.trim() || "ゲスト"; players[0].name = myName; players[0].icon = `<img src="${myIconStr}">`; players[0].cardBack = myCardBack; saveUserData(); switchScreen('main-menu'); }
 
-    const gachaIcons = ['icon_pien.png', 'icon_zombie.png', 'icon_happy.png', 'icon_piero.png', 'icon_ringo.png', 'icon_gun.png', 'icon_kaeruman.png', 'icon_miko.png', 'icon_birthday.png', 'icon_hugu.png', 'icon_tekira.png', 'icon_tekira2.png', 'icon_sanchan.png', 'icon_dice.png'];
-    const gachaBacks = ['card_kaeru.png', 'card_pien.png', 'card_zombie.png', 'card_piero.png', 'card_ringo.png', 'card_kaeruman.png', 'card_star.png', 'card_miko.png', 'card_hatena.png'];
-    
     function openGacha(type) {
         let isCoin = (type === 'icon' || type === 'back');
         if (isCoin) {
@@ -596,24 +575,24 @@
         }
         saveUserData();
         
-        $('gacha-overlay').style.display = 'flex'; $('gacha-box-anim').style.display = 'block';
-        const box = $('gacha-box-anim'); box.style.animation = 'none'; box.offsetHeight; box.style.animation = null;
+        getEl('gacha-overlay').style.display = 'flex'; getEl('gacha-box-anim').style.display = 'block';
+        const box = getEl('gacha-box-anim'); box.style.animation = 'none'; box.offsetHeight; box.style.animation = null;
         
-        $('gacha-result-icon').style.display = 'none'; $('gacha-result-text').style.display = 'none'; $('gacha-close-btn').style.display = 'none'; $('gacha-close-btn').setAttribute('onclick', 'closeGacha()');
+        getEl('gacha-result-icon').style.display = 'none'; getEl('gacha-result-text').style.display = 'none'; getEl('gacha-close-btn').style.display = 'none'; getEl('gacha-close-btn').setAttribute('onclick', 'closeGacha()');
         playSound('draw');
         
         setTimeout(() => {
-            playSound('yaniv'); $('gacha-box-anim').style.display = 'none'; $('gacha-result-icon').style.display = 'block'; $('gacha-result-text').style.display = 'block'; $('gacha-close-btn').style.display = 'block';
+            playSound('yaniv'); getEl('gacha-box-anim').style.display = 'none'; getEl('gacha-result-icon').style.display = 'block'; getEl('gacha-result-text').style.display = 'block'; getEl('gacha-close-btn').style.display = 'block';
             
             if (isCoin) {
                 let lockedList = type === 'icon' ? gachaIcons.filter(k => !unlockedIcons.includes(k)) : gachaBacks.filter(k => !unlockedBacks.includes(k));
                 let newItem = lockedList[Math.floor(Math.random() * lockedList.length)];
                 if (type === 'icon') {
                     unlockedIcons.push(newItem); localStorage.setItem('yaniv_unlocked_icons', JSON.stringify(unlockedIcons)); refreshIconSelect();
-                    $('gacha-result-icon').innerHTML = `<img src="${newItem}">`; $('gacha-result-text').textContent = `${iconData[newItem]} をゲット！`;
+                    getEl('gacha-result-icon').innerHTML = `<img src="${newItem}">`; getEl('gacha-result-text').textContent = `${iconData[newItem]} をゲット！`;
                 } else {
                     unlockedBacks.push(newItem); localStorage.setItem('yaniv_unlocked_backs', JSON.stringify(unlockedBacks)); refreshBackSelect();
-                    $('gacha-result-icon').innerHTML = `<img src="${newItem}" style="border-radius:10px;">`; $('gacha-result-text').textContent = `${cardBackData[newItem]} をゲット！`;
+                    getEl('gacha-result-icon').innerHTML = `<img src="${newItem}" style="border-radius:10px;">`; getEl('gacha-result-text').textContent = `${cardBackData[newItem]} をゲット！`;
                 }
             } else {
                 let r = Math.random() * 100; let resultType = ""; let addCoin = 0;
@@ -621,34 +600,33 @@
                 
                 if (resultType === "icon") {
                     if(!unlockedIcons.includes('icon_oni.png')) { unlockedIcons.push('icon_oni.png'); localStorage.setItem('yaniv_unlocked_icons', JSON.stringify(unlockedIcons)); refreshIconSelect(); }
-                    $('gacha-result-icon').innerHTML = `<img src="icon_oni.png">`; $('gacha-result-text').textContent = `限定アイコン「鬼」をゲット！`;
+                    getEl('gacha-result-icon').innerHTML = `<img src="icon_oni.png">`; getEl('gacha-result-text').textContent = `限定アイコン「鬼」をゲット！`;
                 } else {
-                    userCoins += addCoin; saveUserData(); $('gacha-result-icon').innerHTML = `<div style="font-size:60px; text-shadow:0 0 20px #ffeb3b;">${addCoin}G</div>`; $('gacha-result-text').textContent = `コイン大量ゲット！`;
+                    userCoins += addCoin; saveUserData(); getEl('gacha-result-icon').innerHTML = `<div style="font-size:60px; text-shadow:0 0 20px #ffeb3b;">${addCoin}G</div>`; getEl('gacha-result-text').textContent = `コイン大量ゲット！`;
                 }
             }
         }, 1500);
     }
     function openOniGacha() { openGacha('oni'); }
-    function closeGacha() { $('gacha-overlay').style.display = 'none'; }
+    function closeGacha() { getEl('gacha-overlay').style.display = 'none'; }
 
     // --- チャット ---
-    function toggleChatInput() { const container = $('chat-input-container'); container.style.display = container.style.display === 'none' ? 'flex' : 'none'; if (container.style.display === 'flex') $('chat-input-text').focus(); }
-    function submitChatMessage() { const input = $('chat-input-text'); const text = input.value.trim(); if (!text) return; input.value = ''; toggleChatInput(); displayChatMessage(myNetworkId, text); const data = { type: 'CHAT', senderId: myNetworkId, text: text }; if (isHost && guestConnections.length > 0) guestConnections.forEach(c => c.send(data)); else if (!isHost && hostConnection) hostConnection.send(data); }
-    function displayChatMessage(senderId, text) { const p = players.find(x => x.id === senderId); if (!p) return; const container = $('chat-display-container'); const msgEl = document.createElement('div'); msgEl.className = 'chat-msg'; msgEl.innerHTML = `<span class="icon-small" style="width:22px;height:22px;">${p.icon}</span> <strong>${p.name}:</strong> <span>${text}</span>`; container.appendChild(msgEl); playSound('chat'); setTimeout(() => { if(msgEl.parentNode) msgEl.remove(); }, 5000); }
+    function toggleChatInput() { const container = getEl('chat-input-container'); container.style.display = container.style.display === 'none' ? 'flex' : 'none'; if (container.style.display === 'flex') getEl('chat-input-text').focus(); }
+    function submitChatMessage() { const input = getEl('chat-input-text'); const text = input.value.trim(); if (!text) return; input.value = ''; toggleChatInput(); displayChatMessage(myNetworkId, text); const data = { type: 'CHAT', senderId: myNetworkId, text: text }; if (isHost && guestConnections.length > 0) guestConnections.forEach(c => c.send(data)); else if (!isHost && hostConnection) hostConnection.send(data); }
+    function displayChatMessage(senderId, text) { const p = players.find(x => x.id === senderId); if (!p) return; const container = getEl('chat-display-container'); const msgEl = document.createElement('div'); msgEl.className = 'chat-msg'; msgEl.innerHTML = `<span class="icon-small" style="width:22px;height:22px;">${p.icon}</span> <strong>${p.name}:</strong> <span>${text}</span>`; container.appendChild(msgEl); playSound('chat'); setTimeout(() => { if(msgEl.parentNode) msgEl.remove(); }, 5000); }
 
     // --- 戦績 ---
     function showStatsScreen() { switchScreen('stats-screen'); updateLevelUI(); showStatsTab('pvp'); }
     function showStatsTab(type) {
-        $('tab-pvp').style.opacity = type === 'pvp' ? '1' : '0.5'; $('tab-cpu').style.opacity = type === 'cpu' ? '1' : '0.5'; $('tab-history').style.opacity = type === 'history' ? '1' : '0.5';
-        const content = $('stats-content'); content.innerHTML = '';
+        getEl('tab-pvp').style.opacity = type === 'pvp' ? '1' : '0.5'; getEl('tab-cpu').style.opacity = type === 'cpu' ? '1' : '0.5'; getEl('tab-history').style.opacity = type === 'history' ? '1' : '0.5';
+        const content = getEl('stats-content'); content.innerHTML = '';
         if (type === 'history') {
             let history = JSON.parse(localStorage.getItem('yaniv_history')) || [];
             if (history.length === 0) { content.innerHTML = '<div style="text-align:center; color:#999; margin-top:20px;">履歴がありません</div>'; return; }
             history.forEach((match, idx) => {
                 const el = document.createElement('div'); el.className = 'history-item'; let tableRows = ''; const unit = match.isOffline ? "点" : "杯";
                 match.players.forEach((p, rank) => { let s = match.isOffline ? -p.drinks : p.drinks; let iconHtml = p.icon || '<img src="icon_default.png">'; tableRows += `<tr><td style="width:30px;">${rank+1}位</td><td><span class="icon-small" style="width:16px;height:16px;">${iconHtml}</span> ${p.name}</td><td style="text-align:right; font-weight:bold;">${s}${unit}</td></tr>`; });
-                let noteStr = match.note ? `<span class="history-note">${match.note}</span>` : "";
-                el.innerHTML = `<button class="history-delete" onclick="deleteHistory(${idx})">×</button><div><span class="history-date">${idx+1}回前 - ${match.date}</span> ${noteStr}</div><table class="history-table">${tableRows}</table>`; content.appendChild(el);
+                let noteStr = match.note ? `<span class="history-note">${match.note}</span>` : ""; el.innerHTML = `<button class="history-delete" onclick="deleteHistory(${idx})">×</button><div><span class="history-date">${idx+1}回前 - ${match.date}</span> ${noteStr}</div><table class="history-table">${tableRows}</table>`; content.appendChild(el);
             });
         } else {
             const data = userStats[type]; const winRate = data.matches > 0 ? ((data.wins / data.matches) * 100).toFixed(1) : "0.0"; const avgRank = data.matches > 0 ? (data.totalRank / data.matches).toFixed(1) : "0.0";
@@ -660,25 +638,23 @@
 
     // --- 通信・ロビー ---
     function updateLobbyRuleDisplay() {
-        const el = $('lobby-rule-display'); if(!el) return;
-        let rType = $('rule-template').value; let unit = isOfflineMode ? "点" : "杯"; let rds = $('room-rounds').value;
+        const el = getEl('lobby-rule-display'); if(!el) return;
+        let rType = getEl('rule-template').value; let unit = isOfflineMode ? "点" : "杯"; let rds = getEl('room-rounds').value;
         if(isOfflineMode) { el.textContent = isOniMode ? `鬼モード: 負けは1位との差分 / ヤニブ返し-25点 | ${rds}試合` : `通常モード: 負け-1点 / ヤニブ返し-2点 | ${rds}試合`; } 
         else {
-            if (rType === "KD") el.textContent = `KDルール (負け1${unit} / ヤニブ返し2${unit}) | ${rds}試合`; else if (rType === "BENI") el.textContent = `BENIルール (2回負けで1${unit}) | ${rds}試合`; else el.textContent = `カスタム: 負${$('custom-lose').value}${unit}/ヤニブ返${$('custom-asaf').value}${unit} (${$('custom-all-lose').checked ? "全員負けあり" : "通常"}) | ${rds}試合`;
+            if (rType === "KD") el.textContent = `KDルール (負け1${unit} / ヤニブ返し2${unit}) | ${rds}試合`; else if (rType === "BENI") el.textContent = `BENIルール (2回負けで1${unit}) | ${rds}試合`; else el.textContent = `カスタム: 負${getEl('custom-lose').value}${unit}/ヤニブ返${getEl('custom-asaf').value}${unit} (${getEl('custom-all-lose').checked ? "全員負けあり" : "通常"}) | ${rds}試合`;
         }
     }
-    function syncRulesToGuests() { if(!isHost) return; guestConnections.forEach(c => c.send({ type: 'RULE_UPDATE', rds: $('room-rounds').value, rType: $('rule-template').value, cLose: $('custom-lose').value, cAsaf: $('custom-asaf').value, cAll: $('custom-all-lose').checked })); }
+    function syncRulesToGuests() { if(!isHost) return; guestConnections.forEach(c => c.send({ type: 'RULE_UPDATE', rds: getEl('room-rounds').value, rType: getEl('rule-template').value, cLose: getEl('custom-lose').value, cAsaf: getEl('custom-asaf').value, cAll: getEl('custom-all-lose').checked })); }
 
     function createRoom() {
         isHost = true; myNetworkId = 0; isOfflineMode = false; isOniMode = false;
         players.forEach(p => { p.isActive = false; p.isReal = false; p.peerId = null; p.hand = []; p.drinks = 0; p.loseCount = 0; });
         players[0].name = myName; players[0].icon = `<img src="${myIconStr}">`; players[0].cardBack = myCardBack; players[0].isReal = true; players[0].isActive = true; players[0].level = myLevelObj.level;
-        $('host-controls').style.display = 'block'; $('guest-controls').style.display = 'none'; $('lobby-title').textContent = "待機ロビー (ホスト)"; switchScreen('room-waiting-screen'); updateLobbyRuleDisplay();
-        
-        const displayId = String(Math.floor(10000 + Math.random() * 90000)); const internalId = 'ynv-room-' + displayId; $('room-id-display').innerHTML = `部屋ID: <span style="font-size:28px; color:#e91e63; letter-spacing:4px;">${displayId}</span><br><span style="font-size:10px; color:#555;">友達にこの数字を教えてください</span>`;
+        getEl('host-controls').style.display = 'block'; getEl('guest-controls').style.display = 'none'; getEl('lobby-title').textContent = "待機ロビー (ホスト)"; switchScreen('room-waiting-screen'); updateLobbyRuleDisplay();
+        const displayId = String(Math.floor(10000 + Math.random() * 90000)); const internalId = 'ynv-room-' + displayId; getEl('room-id-display').innerHTML = `部屋ID: <span style="font-size:28px; color:#e91e63; letter-spacing:4px;">${displayId}</span><br><span style="font-size:10px; color:#555;">友達にこの数字を教えてください</span>`;
         updateLobbyUI();
-        peer = new Peer(internalId);
-        peer.on('open', (id) => { updateLobbyUI(); });
+        peer = new Peer(internalId); peer.on('open', (id) => { updateLobbyUI(); });
         peer.on('connection', (conn) => {
             guestConnections.push(conn); syncRulesToGuests(); 
             conn.on('data', (data) => {
@@ -689,7 +665,7 @@
     }
 
     function leaveRoom() { 
-        if (!gameEnded && currentRound >= 1 && activePlayers.length > 0 && $('game-container').style.display !== 'none') {
+        if (!gameEnded && currentRound >= 1 && activePlayers.length > 0 && getEl('game-container').style.display !== 'none') {
             let finalData = activePlayers.map(p => ({ id: p.id, name: p.name, icon: p.icon, drinks: p.drinks, level: p.level })); finalData.sort((a, b) => a.drinks - b.drinks); saveHistory(finalData, `ラウンド${currentRound} で中断`);
         }
         if(peer) peer.destroy(); peer = null; hostConnection = null; guestConnections = []; gameEnded = true; switchScreen('main-menu'); 
@@ -697,7 +673,7 @@
 
     function handleDisconnect(peerId) {
         const p = players.find(x => x.peerId === peerId);
-        if(p) { p.isReal = false; p.name = p.name + "(CPU)"; p.peerId = null; p.level = 1; if($('game-container').style.display === 'flex') { updateUI(); broadcastState(); if(currentTurn === p.id && !gameEnded) { setTimeout(() => processCPUTurn(p.id), 1000); } } else { updateLobbyUI(); broadcastLobbyState(); } }
+        if(p) { p.isReal = false; p.name = p.name + "(CPU)"; p.peerId = null; p.level = 1; if(getEl('game-container').style.display === 'flex') { updateUI(); broadcastState(); if(currentTurn === p.id && !gameEnded) { setTimeout(() => processCPUTurn(p.id), 1000); } } else { updateLobbyUI(); broadcastLobbyState(); } }
     }
 
     function handleGuestJoin(guestName, guestIcon, guestCardBack, guestLevel, conn) {
@@ -716,20 +692,19 @@
         players[0].name = myName; players[0].icon = `<img src="${myIconStr}">`; players[0].cardBack = myCardBack; players[0].isReal = true; players[0].isActive = true; players[0].level = myLevelObj.level;
         players[1].name = 'CPU 1'; players[1].icon = '<img src="icon_default.png">'; players[1].isReal = false; players[1].isActive = true; players[2].name = 'CPU 2'; players[2].icon = '<img src="icon_default.png">'; players[2].isReal = false; players[2].isActive = true; players[3].name = 'CPU 3'; players[3].icon = '<img src="icon_default.png">'; players[3].isReal = false; players[3].isActive = true;
 
-        $('rule-template').value = "KD"; $('room-rounds').value = 5;
-        if(isOniMode) { switchScreen('game-container'); startRound(); } else { $('host-controls').style.display = 'block'; $('guest-controls').style.display = 'none'; $('lobby-title').textContent = "オフラインロビー"; $('room-id-display').innerHTML = `ひとりで遊ぶモード`; updateLobbyRuleDisplay(); updateLobbyUI(); switchScreen('room-waiting-screen'); }
+        getEl('rule-template').value = "KD"; getEl('room-rounds').value = 5;
+        if(isOniMode) { switchScreen('game-container'); startRound(); } else { getEl('host-controls').style.display = 'block'; getEl('guest-controls').style.display = 'none'; getEl('lobby-title').textContent = "オフラインロビー"; getEl('room-id-display').innerHTML = `ひとりで遊ぶモード`; updateLobbyRuleDisplay(); updateLobbyUI(); switchScreen('room-waiting-screen'); }
     }
 
     function joinRoom() {
-        isHost = false; isOfflineMode = false; isOniMode = false; const inputId = $('join-room-id').value.trim(); if(!inputId || inputId.length !== 5) { alert("5桁のIDを入力してください"); return; } const hostId = 'ynv-room-' + inputId;
-        $('host-controls').style.display = 'none'; $('guest-controls').style.display = 'block'; $('lobby-title').textContent = "待機ロビー (ゲスト)"; switchScreen('room-waiting-screen'); $('room-id-display').innerHTML = `<span style="color:#e91e63; font-size:24px; letter-spacing:4px;">${inputId}</span> に接続中...`;
-        
+        isHost = false; isOfflineMode = false; isOniMode = false; const inputId = getEl('join-room-id').value.trim(); if(!inputId || inputId.length !== 5) { alert("5桁のIDを入力してください"); return; } const hostId = 'ynv-room-' + inputId;
+        getEl('host-controls').style.display = 'none'; getEl('guest-controls').style.display = 'block'; getEl('lobby-title').textContent = "待機ロビー (ゲスト)"; switchScreen('room-waiting-screen'); getEl('room-id-display').innerHTML = `<span style="color:#e91e63; font-size:24px; letter-spacing:4px;">${inputId}</span> に接続中...`;
         peer = new Peer(); 
         peer.on('open', () => {
             hostConnection = peer.connect(hostId);
-            hostConnection.on('open', () => { $('room-id-display').innerHTML = `ホストに接続完了！`; hostConnection.send({ type: 'JOIN_REQUEST', name: myName, icon: `<img src="${myIconStr}">`, cardBack: myCardBack, level: myLevelObj.level }); });
+            hostConnection.on('open', () => { getEl('room-id-display').innerHTML = `ホストに接続完了！`; hostConnection.send({ type: 'JOIN_REQUEST', name: myName, icon: `<img src="${myIconStr}">`, cardBack: myCardBack, level: myLevelObj.level }); });
             hostConnection.on('data', (data) => {
-                if (data.type === 'JOIN_ACCEPTED') { myNetworkId = data.yourId; } else if (data.type === 'JOIN_REJECTED') { alert("入室失敗: " + data.reason); leaveRoom(); } else if (data.type === 'LOBBY_UPDATE') { data.players.forEach((dp, i) => { players[i].name = dp.name; players[i].icon = dp.icon; players[i].isReal = dp.isReal; players[i].isActive = dp.isActive; players[i].level = dp.level||1; }); updateLobbyUI(); } else if (data.type === 'RULE_UPDATE') { $('room-rounds').value = data.rds; $('rule-template').value = data.rType; $('custom-lose').value = data.cLose; $('custom-asaf').value = data.cAsaf; $('custom-all-lose').checked = data.cAll; ruleType = data.rType; updateLobbyRuleDisplay(); } else if (data.type === 'GAME_START') { switchScreen('game-container'); } else if (data.type === 'SYNC_STATE') { applyState(data.state); updateUI(); setTurn(currentTurn); } else if (data.type === 'ACTION_EVENT') { applyActionLocally(data); } else if (data.type === 'YANIV_EVENT') { if(!gameEnded) playYanivEvent(data); } else if (data.type === 'SHOW_RESULTS') { showResultsModal(data.payload); } else if (data.type === 'CHAT') { displayChatMessage(data.senderId, data.text); } else if (data.type === 'RETURN_LOBBY') { gameEnded = true; switchScreen('room-waiting-screen'); }
+                if (data.type === 'JOIN_ACCEPTED') { myNetworkId = data.yourId; } else if (data.type === 'JOIN_REJECTED') { alert("入室失敗: " + data.reason); leaveRoom(); } else if (data.type === 'LOBBY_UPDATE') { data.players.forEach((dp, i) => { players[i].name = dp.name; players[i].icon = dp.icon; players[i].isReal = dp.isReal; players[i].isActive = dp.isActive; players[i].level = dp.level||1; }); updateLobbyUI(); } else if (data.type === 'RULE_UPDATE') { getEl('room-rounds').value = data.rds; getEl('rule-template').value = data.rType; getEl('custom-lose').value = data.cLose; getEl('custom-asaf').value = data.cAsaf; getEl('custom-all-lose').checked = data.cAll; ruleType = data.rType; updateLobbyRuleDisplay(); } else if (data.type === 'GAME_START') { switchScreen('game-container'); } else if (data.type === 'SYNC_STATE') { applyState(data.state); updateUI(); setTurn(currentTurn); } else if (data.type === 'ACTION_EVENT') { applyActionLocally(data); } else if (data.type === 'YANIV_EVENT') { if(!gameEnded) playYanivEvent(data); } else if (data.type === 'SHOW_RESULTS') { showResultsModal(data.payload); } else if (data.type === 'CHAT') { displayChatMessage(data.senderId, data.text); } else if (data.type === 'RETURN_LOBBY') { gameEnded = true; switchScreen('room-waiting-screen'); }
             });
             hostConnection.on('close', () => { alert("ホストとの接続が切れました。解散します。"); leaveRoom(); });
         });
@@ -738,7 +713,7 @@
 
     function startNetworkGame() {
         let count = players.filter(p => p.isActive).length; if(count < 2) { alert("最低2人は必要です！"); return; }
-        MAX_ROUNDS = parseInt($('room-rounds').value) || 5; ruleType = $('rule-template').value || "KD"; customLose = parseInt($('custom-lose').value) || 1; customAsaf = parseInt($('custom-asaf').value) || 2; customAllLose = $('custom-all-lose').checked;
+        MAX_ROUNDS = parseInt(getEl('room-rounds').value) || 5; ruleType = getEl('rule-template').value || "KD"; customLose = parseInt(getEl('custom-lose').value) || 1; customAsaf = parseInt(getEl('custom-asaf').value) || 2; customAllLose = getEl('custom-all-lose').checked;
         currentRound = 1; activePlayers = players.filter(p => p.isActive); activePlayers.forEach(p => { p.drinks = 0; p.loseCount = 0; });
         guestConnections.forEach(conn => conn.send({ type: 'GAME_START' })); switchScreen('game-container'); startRound();
     }
@@ -756,7 +731,7 @@
             gameEnded = false; createDeck(); activePlayers = players.filter(p => p.isActive === true); activePlayers.forEach(p => p.hand = deck.splice(0, 5));
             let firstCard = deck.pop(); while (firstCard && firstCard.type === 'joker') { deck.unshift(firstCard); firstCard = deck.pop(); } discardSets = [ [firstCard] ]; selectedCards = [];
             let activeIds = activePlayers.map(p => p.id); if (currentRound === 1) currentTurn = activeIds[Math.floor(Math.random() * activeIds.length)]; else currentTurn = activeIds.includes(firstPlayer) ? firstPlayer : activeIds[0];
-            $('round-counter').textContent = `第 ${currentRound} / ${MAX_ROUNDS} ラウンド`;
+            getEl('round-counter').textContent = `第 ${currentRound} / ${MAX_ROUNDS} ラウンド`;
             broadcastState(); updateUI(); setTurn(currentTurn);
             const firstPObj = players.find(p => p.id === currentTurn); if (firstPObj && !firstPObj.isReal) { setTimeout(() => processCPUTurn(currentTurn), 1200); }
         } catch (e) { console.error("Round Start Error: ", e); }
@@ -766,7 +741,7 @@
     function applyState(state) {
         players = state.players; discardSets = state.discardSets; deck.length = state.deckCount; currentTurn = state.currentTurn; currentRound = state.currentRound; MAX_ROUNDS = state.MAX_ROUNDS;
         if(state.gameEnded !== undefined) gameEnded = state.gameEnded; if(state.ruleType) ruleType = state.ruleType; if(state.isOfflineMode !== undefined) isOfflineMode = state.isOfflineMode;
-        activePlayers = players.filter(p => p.isActive === true); $('round-counter').textContent = `第 ${currentRound} / ${MAX_ROUNDS} ラウンド`;
+        activePlayers = players.filter(p => p.isActive === true); getEl('round-counter').textContent = `第 ${currentRound} / ${MAX_ROUNDS} ラウンド`;
     }
 
     function getUiIndex(playerId) {
@@ -777,30 +752,30 @@
 
     function updateUI(revealAll = false) {
         try {
-            [0, 1, 2, 3].forEach(i => { if($(`area-${i}`)) $(`area-${i}`).style.display = 'none'; }); const unit = isOfflineMode ? "点" : "杯";
+            [0, 1, 2, 3].forEach(i => { if(getEl(`area-${i}`)) getEl(`area-${i}`).style.display = 'none'; }); const unit = isOfflineMode ? "点" : "杯";
             players.forEach(p => {
-                if (!p.isActive) return; const uiIndex = getUiIndex(p.id); const areaEl = $(`area-${uiIndex}`); if(!areaEl) return; areaEl.style.display = 'flex'; 
-                let displayName = p.isReal ? `${p.name} <span style="font-size:10px; color:#ffeb3b;">(Lv.${p.level})</span>` : p.name; $(`name-${uiIndex}`).innerHTML = displayName; $(`icon-${uiIndex}`).innerHTML = p.icon;
-                let dVal = p.drinks; if (isOfflineMode) $(`drink-${uiIndex}`).textContent = `${-dVal}${unit}`; else $(`drink-${uiIndex}`).textContent = `${dVal}${unit}`;
-                const isMe = (p.id === myNetworkId); const handContainer = isMe ? $('player-hand') : $(`cpu${uiIndex}-hand`); handContainer.innerHTML = '';
+                if (!p.isActive) return; const uiIndex = getUiIndex(p.id); const areaEl = getEl(`area-${uiIndex}`); if(!areaEl) return; areaEl.style.display = 'flex'; 
+                let displayName = p.isReal ? `${p.name} <span style="font-size:10px; color:#ffeb3b;">(Lv.${p.level})</span>` : p.name; getEl(`name-${uiIndex}`).innerHTML = displayName; getEl(`icon-${uiIndex}`).innerHTML = p.icon;
+                let dVal = p.drinks; if (isOfflineMode) getEl(`drink-${uiIndex}`).textContent = `${-dVal}${unit}`; else getEl(`drink-${uiIndex}`).textContent = `${dVal}${unit}`;
+                const isMe = (p.id === myNetworkId); const handContainer = isMe ? getEl('player-hand') : getEl(`cpu${uiIndex}-hand`); handContainer.innerHTML = '';
                 if (isMe) p.hand.sort((a, b) => a.value - b.value);
                 p.hand.forEach(card => {
                     const cardEl = createCardElement(card, revealAll || isMe, p.id);
                     if (isMe) { const selIndex = selectedCards.findIndex(c => c.id === card.id); if (selIndex > -1) { cardEl.classList.add('selected'); cardEl.setAttribute('data-order', selIndex + 1); } if (currentTurn === myNetworkId && !gameEnded) { cardEl.onclick = () => { toggleCardSelection(card); playSound('click'); } } }
                     handContainer.appendChild(cardEl);
                 });
-                if (isMe) $('sum-0').textContent = getHandScore(p.hand); else $(`sum-${uiIndex}`).textContent = revealAll ? getHandScore(p.hand) : "?";
+                if (isMe) getEl(`sum-0`).textContent = getHandScore(p.hand); else getEl(`sum-${uiIndex}`).textContent = revealAll ? getHandScore(p.hand) : "?";
             });
 
-            const discardContainer = $('discard-pile'); discardContainer.innerHTML = '';
-            const deckPile = $('deck-pile'); deckPile.className = 'pile card back';
+            const discardContainer = getEl('discard-pile'); discardContainer.innerHTML = '';
+            const deckPile = getEl('deck-pile'); deckPile.className = 'pile card back';
             if(myCardBack.startsWith('back-')) { deckPile.classList.add(myCardBack); deckPile.style.backgroundImage = 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'; } else { deckPile.classList.add('back-img'); deckPile.style.backgroundImage = `url('${myCardBack}')`; }
 
             if (discardSets.length > 0) {
                 const prm = getCardParams(); const topSet = discardSets[discardSets.length - 1]; const totalWidth = prm.w + (topSet.length - 1) * prm.offset; const startX = -(totalWidth / 2) + (prm.w / 2);
                 topSet.forEach((card, i) => { const cardEl = createCardElement(card, true); cardEl.style.position = 'absolute'; cardEl.style.transform = `translateX(${startX + i * prm.offset}px)`; cardEl.style.zIndex = i; cardEl.style.boxShadow = "-2px 2px 5px rgba(0,0,0,0.5)"; discardContainer.appendChild(cardEl); });
             }
-            $('deck-count').textContent = deck.length; updateButtonStates();
+            getEl('deck-count').textContent = deck.length; updateButtonStates();
         } catch (e) { console.error("UI Update Error: ", e); }
     }
 
@@ -814,12 +789,12 @@
     function getCardParams() { const isMobile = window.innerWidth <= 768; return { w: isMobile ? 52 : 72, h: isMobile ? 78 : 108, offset: isMobile ? 25 : 30 }; }
 
     function setTurn(playerIndex) {
-        currentTurn = playerIndex; [0,1,2,3].forEach(i => { if($(`area-${i}`)) $(`area-${i}`).classList.remove('active'); }); const uiIndex = getUiIndex(playerIndex); if($(`area-${uiIndex}`)) $(`area-${uiIndex}`).classList.add('active'); const name = players.find(p=>p.id===playerIndex).name; $('turn-indicator').textContent = playerIndex === myNetworkId ? "あなたのターン" : `${name} のターン...`;
-        if (currentTurn === myNetworkId && !gameEnded) { const score = getHandScore(players.find(p=>p.id===myNetworkId).hand); $('yaniv-btn').style.display = score <= 5 ? 'block' : 'none'; } else { $('yaniv-btn').style.display = 'none'; }
+        currentTurn = playerIndex; [0,1,2,3].forEach(i => { if(getEl(`area-${i}`)) getEl(`area-${i}`).classList.remove('active'); }); const uiIndex = getUiIndex(playerIndex); if(getEl(`area-${uiIndex}`)) getEl(`area-${uiIndex}`).classList.add('active'); const name = players.find(p=>p.id===playerIndex).name; getEl('turn-indicator').textContent = playerIndex === myNetworkId ? "あなたのターン" : `${name} のターン...`;
+        if (currentTurn === myNetworkId && !gameEnded) { const score = getHandScore(players.find(p=>p.id===myNetworkId).hand); getEl('yaniv-btn').style.display = score <= 5 ? 'block' : 'none'; } else { getEl('yaniv-btn').style.display = 'none'; }
     }
 
     function updateButtonStates() {
-        const controls = $('player-controls'); const btnDeck = $('draw-deck-btn'); const btnDiscard = $('draw-discard-btn');
+        const controls = getEl('player-controls'); const btnDeck = getEl('draw-deck-btn'); const btnDiscard = getEl('draw-discard-btn');
         if (currentTurn !== myNetworkId || gameEnded) { controls.style.display = 'none'; return; } controls.style.display = 'flex';
         if (selectedCards.length === 0 || !isValidPlay(selectedCards)) { btnDeck.disabled = true; btnDiscard.disabled = true; } else { btnDeck.disabled = false; btnDiscard.disabled = discardSets.length === 0; }
     }
@@ -841,7 +816,7 @@
         try {
             const uiIndex = getUiIndex(playerIndex); const prm = getCardParams();
             if (cardsToDiscard && cardsToDiscard.length > 0) {
-                const discardPile = $('discard-pile'); const startArea = $(`area-${uiIndex}`);
+                const discardPile = getEl('discard-pile'); const startArea = getEl(`area-${uiIndex}`);
                 if (discardPile && startArea) {
                     const sRect = startArea.getBoundingClientRect(); const dRect = discardPile.getBoundingClientRect();
                     cardsToDiscard.forEach((c, i) => {
@@ -851,7 +826,7 @@
                 }
             }
             setTimeout(() => {
-                const sourceId = drawSource === 'discard' ? 'discard-pile' : 'deck-pile'; const sourceEl = $(sourceId); const targetArea = $(`area-${uiIndex}`);
+                const sourceId = drawSource === 'discard' ? 'discard-pile' : 'deck-pile'; const sourceEl = getEl(sourceId); const targetArea = getEl(`area-${uiIndex}`);
                 if (sourceEl && targetArea) {
                     const sRect = sourceEl.getBoundingClientRect(); const tRect = targetArea.getBoundingClientRect(); const isFaceUp = (drawSource === 'discard'); const fakeCard = { id: 999, type: 'normal', suit: '?', rank: '?' }; const animCard = createCardElement(fakeCard, isFaceUp, playerIndex);
                     animCard.style.position = 'fixed'; animCard.style.zIndex = 9999; animCard.style.top = (sRect.top + sRect.height/2 - prm.h/2) + 'px'; animCard.style.left = (sRect.left + sRect.width/2 - prm.w/2) + 'px'; animCard.style.transform = 'scale(0.8)'; animCard.style.transition = 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)'; document.body.appendChild(animCard);
@@ -896,9 +871,9 @@
 
     function applyActionLocally(data) {
         const { playerIndex, cardsToDiscard, drawSource, newState } = data;
-        if (playerIndex === myNetworkId) $('player-controls').style.display = 'none';
+        if (playerIndex === myNetworkId) getEl('player-controls').style.display = 'none';
         playSound(drawSource === 'discard' ? 'discard' : 'draw');
-        const uiIndex = getUiIndex(playerIndex); const badge = $(`action-${uiIndex}`); 
+        const uiIndex = getUiIndex(playerIndex); const badge = getEl(`action-${uiIndex}`); 
         if(badge) { badge.textContent = drawSource === 'discard' ? "拾った！" : "引いた"; badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 1500); }
         performCosmeticAnimations(playerIndex, cardsToDiscard, drawSource);
         if(newState) { applyState(newState); } updateUI(); setTurn(currentTurn);
@@ -916,7 +891,7 @@
         const declarerScore = scores.find(s => s.id === declarerIndex).score; const otherScores = scores.filter(s => s.id !== declarerIndex).map(s=>s.score); 
         const othersMin = Math.min(...otherScores); const isAsaf = othersMin <= declarerScore; 
 
-        const eventOverlay = $('event-overlay'); const eventText = $('event-text'); eventOverlay.style.display = 'flex';
+        const eventOverlay = getEl('event-overlay'); const eventText = getEl('event-text'); eventOverlay.style.display = 'flex';
         if(isAsaf) { playSound('asaf'); eventText.textContent = "ヤニブ返し!!"; eventText.style.color = "#f44336"; eventText.style.textShadow = "0 0 20px #ff0000"; } 
         else { playSound('yaniv'); eventText.textContent = "ヤニブ!!"; eventText.style.color = "#ffeb3b"; eventText.style.textShadow = "0 0 20px #ffeb3b"; }
         setTimeout(() => { eventOverlay.style.display = 'none'; if(isHost) { calculateAndShowResults(data.declarerIndex); } }, 2000);
@@ -933,14 +908,17 @@
             modalSub = "🚨 ヤニブ返し発生！ 🚨"; 
             if (isOniMode) {
                 scores.forEach(s => { if (s.id === declarerIndex) { drinkChanges[s.id] = 25; } else { drinkChanges[s.id] = 0; } });
-            } else if (isOfflineMode || ruleType === "KD") { drinkChanges[declarerIndex] = 2; }
+            } else if (isOfflineMode) { drinkChanges[declarerIndex] = 2; }
+            else if (ruleType === "KD") { drinkChanges[declarerIndex] = 2; } 
             else if (ruleType === "BENI") { lossChanges[declarerIndex] = 2; let p = players.find(x => x.id === declarerIndex); drinkChanges[declarerIndex] = Math.floor(((p.loseCount || 0) + 2) / 2) - Math.floor((p.loseCount || 0) / 2); } 
             else if (ruleType === "CUSTOM") { drinkChanges[declarerIndex] = customAsaf; }
         } else { 
             modalSub = "✨ ヤニブ成功！ ✨"; let minScore = Math.min(...scores.map(s => s.score)); 
+            
             if (isOniMode) {
-                scores.forEach(s => { drinkChanges[s.id] = s.score - minScore; });
-            } else if (isOfflineMode || ruleType === "KD") { scores.forEach(s => { if(s.score === maxScore) drinkChanges[s.id] = 1; }); }
+                let topScore = minScore; scores.forEach(s => { drinkChanges[s.id] = s.score - topScore; });
+            } else if (isOfflineMode) { scores.forEach(s => { if(s.score === maxScore) drinkChanges[s.id] = 1; }); }
+            else if (ruleType === "KD") { scores.forEach(s => { if(s.score === maxScore) drinkChanges[s.id] = 1; }); } 
             else if (ruleType === "BENI") { scores.forEach(s => { if(s.score === maxScore) { lossChanges[s.id] = 1; let p = players.find(x => x.id === s.id); drinkChanges[s.id] = Math.floor(((p.loseCount || 0) + 1) / 2) - Math.floor((p.loseCount || 0) / 2); } }); } 
             else if (ruleType === "CUSTOM") { scores.forEach(s => { if (customAllLose) { if (s.score > minScore) drinkChanges[s.id] = customLose; } else { if (s.score === maxScore) drinkChanges[s.id] = customLose; } }); }
         }
@@ -948,26 +926,36 @@
         if (isOniMode && drinkChanges[myNetworkId] > 0) { oniModeFailed = true; }
 
         let resultsData = activePlayers.map(p => { 
-            let s = scores.find(x => x.id === p.id).score; return { id: p.id, name: p.name, icon: p.icon, score: s, loseCount: p.loseCount, change: drinkChanges[p.id], lossChange: lossChanges[p.id], drinks: p.drinks, isDeclarer: p.id === declarerIndex, isMax: s === maxScore, level: p.level }; 
+            let s = scores.find(x => x.id === p.id).score;
+            return { id: p.id, name: p.name, icon: p.icon, score: s, loseCount: p.loseCount, change: drinkChanges[p.id], lossChange: lossChanges[p.id], drinks: p.drinks, isDeclarer: p.id === declarerIndex, isMax: s === maxScore, level: p.level }; 
         });
 
-        if (isAsaf) { let others = resultsData.filter(r => !r.isDeclarer); others.sort((a, b) => a.score - b.score); let asafWinner = others.shift(); asafWinner.isAsafWinner = true; resultsData = [asafWinner, ...others, resultsData.find(r => r.isDeclarer)]; } 
-        else { let declarerObj = resultsData.find(r => r.isDeclarer); let maxObjs = resultsData.filter(r => r.isMax && !r.isDeclarer); let others = resultsData.filter(r => !r.isDeclarer && !r.isMax); others.sort((a, b) => a.score - b.score); resultsData = [declarerObj, ...others, ...maxObjs]; }
+        if (isAsaf) {
+            let others = resultsData.filter(r => !r.isDeclarer); others.sort((a, b) => a.score - b.score); let asafWinner = others.shift(); asafWinner.isAsafWinner = true; resultsData = [asafWinner, ...others, resultsData.find(r => r.isDeclarer)];
+        } else {
+            let declarerObj = resultsData.find(r => r.isDeclarer); let maxObjs = resultsData.filter(r => r.isMax && !r.isDeclarer); let others = resultsData.filter(r => !r.isDeclarer && !r.isMax); others.sort((a, b) => a.score - b.score); resultsData = [declarerObj, ...others, ...maxObjs];
+        }
 
         firstPlayer = resultsData[resultsData.length - 1].id;
-        resultsData.forEach(r => { let p = players.find(x => x.id === r.id); p.drinks += r.change; r.drinks = p.drinks; if (!isOfflineMode && ruleType === "BENI") { p.loseCount = (p.loseCount || 0) + r.lossChange; r.loseCount = p.loseCount; } });
+        
+        resultsData.forEach(r => { 
+            let p = players.find(x => x.id === r.id); p.drinks += r.change; r.drinks = p.drinks; 
+            if (!isOfflineMode && ruleType === "BENI") { p.loseCount = (p.loseCount || 0) + r.lossChange; r.loseCount = p.loseCount; }
+        });
 
-        const payload = { resultsData, modalSub, isAsaf, currentRound, MAX_ROUNDS }; guestConnections.forEach(c => c.send({ type: 'SHOW_RESULTS', payload })); showResultsModal(payload);
+        const payload = { resultsData, modalSub, isAsaf, currentRound, MAX_ROUNDS };
+        guestConnections.forEach(c => c.send({ type: 'SHOW_RESULTS', payload })); showResultsModal(payload);
     }
 
     function showResultsModal(payload) {
         try {
             const { resultsData, modalSub, isAsaf } = payload;
-            const tbody = $('result-tbody'); tbody.innerHTML = ''; const unit = isOfflineMode ? "点" : "杯";
+            const tbody = getEl('result-tbody'); tbody.innerHTML = ''; const unit = isOfflineMode ? "点" : "杯";
 
             resultsData.forEach((res, index) => {
                 let displayRank = index + 1; if (isAsaf && res.isDeclarer) displayRank = activePlayers.length; 
-                const tr = document.createElement('tr'); if (res.id === myNetworkId) tr.className = 'me-row'; else if (res.isDeclarer) tr.style.backgroundColor = "rgba(255,255,255,0.05)";
+                const tr = document.createElement('tr');
+                if (res.id === myNetworkId) tr.className = 'me-row'; else if (res.isDeclarer) tr.style.backgroundColor = "rgba(255,255,255,0.05)";
                 
                 let changeText = ""; let color = 'white';
                 if (isOfflineMode) { changeText = res.change > 0 ? `-${res.change}${unit}` : `±0`; color = res.change > 0 ? '#f44336' : 'white'; } 
@@ -979,11 +967,16 @@
                 tbody.appendChild(tr);
             });
 
-            $('modal-title').textContent = `第 ${payload.currentRound} 試合 結果`; $('modal-subtitle').textContent = modalSub; 
-            $('modal-btn-single').style.display = 'block'; $('modal-btn-double').style.display = 'none'; $('modal-btn-oni-gacha').style.display = 'none'; $('modal-xp-area').style.display = 'none';
-            $('modal-overlay').style.display = 'flex';
+            getEl('modal-title').textContent = `第 ${payload.currentRound} 試合 結果`; getEl('modal-subtitle').textContent = modalSub; 
             
-            const nextBtn = $('modal-next-btn');
+            getEl('modal-btn-single').style.display = 'block';
+            getEl('modal-btn-double').style.display = 'none';
+            getEl('modal-btn-oni-gacha').style.display = 'none';
+            getEl('modal-xp-area').style.display = 'none';
+
+            getEl('modal-overlay').style.display = 'flex';
+            
+            const nextBtn = getEl('modal-next-btn');
             if (Number(payload.currentRound) >= Number(payload.MAX_ROUNDS)) { modalActionState = 'show_final'; nextBtn.textContent = "最終結果を見る"; } 
             else { modalActionState = 'next_round'; nextBtn.textContent = "次のラウンドへ"; }
         } catch(e) { console.error("Result Modal Error:", e); alert("結果の表示中にエラーが発生しました。"); leaveRoom(); }
@@ -991,82 +984,65 @@
 
     function showFinalTotalRanking() {
         try {
-            $('modal-title').textContent = "🏆 最終総合ランキング 🏆"; $('modal-title').style.color = "#ffeb3b"; $('modal-subtitle').textContent = `${MAX_ROUNDS}ラウンドの全試合が終了しました！`;
+            getEl('modal-title').textContent = "🏆 最終総合ランキング 🏆"; getEl('modal-title').style.color = "#ffeb3b"; getEl('modal-subtitle').textContent = `${MAX_ROUNDS}ラウンドの全試合が終了しました！`;
             let finalData = activePlayers.map(p => ({ id: p.id, name: p.name, icon: p.icon, drinks: p.drinks, level: p.level })); finalData.sort((a, b) => a.drinks - b.drinks); 
             
-            let myRankIndex = finalData.findIndex(r => r.id === myNetworkId); let myRank = myRankIndex !== -1 ? myRankIndex + 1 : 4; 
+            let myRankIndex = finalData.findIndex(r => r.id === myNetworkId); 
+            let myRank = myRankIndex !== -1 ? myRankIndex + 1 : 4; 
+            
             let isPvP = activePlayers.some(p => p.isReal && p.id !== 0); let earnCoin = 0; let earnXp = 0;
 
             if (isPvP) {
-                if (myName === "さにるせぬ") { earnCoin = 500; earnXp = 50; } else if (myRank === 1) { earnCoin = 30 * MAX_ROUNDS; earnXp = 10 * MAX_ROUNDS; } else { earnCoin = 10 * MAX_ROUNDS; earnXp = 5 * MAX_ROUNDS; }
+                if (myName === "さにるせぬ") { earnCoin = 500; earnXp = 50; } 
+                else if (myRank === 1) { earnCoin = 30 * MAX_ROUNDS; earnXp = 10 * MAX_ROUNDS; } 
+                else { earnCoin = 10 * MAX_ROUNDS; earnXp = 5 * MAX_ROUNDS; }
             } else {
-                if (myName === "さにるせぬ") { earnCoin = 500; earnXp = 50; } else if (myRank === 1) { earnCoin = 5 * MAX_ROUNDS; earnXp = 3 * MAX_ROUNDS; } else { earnCoin = 2 * MAX_ROUNDS; earnXp = 1 * MAX_ROUNDS; }
+                if (isOniMode) {
+                    let oniCoins = [0, 50, 30, 10][myRankIndex] || 0; earnCoin = oniCoins; earnXp = (myRank === 1) ? 3 * MAX_ROUNDS : 1 * MAX_ROUNDS;
+                } else {
+                    if (myName === "さにるせぬ") { earnCoin = 500; earnXp = 50; } 
+                    else if (myRank === 1) { earnCoin = 5 * MAX_ROUNDS; earnXp = 3 * MAX_ROUNDS; } 
+                    else { earnCoin = 2 * MAX_ROUNDS; earnXp = 1 * MAX_ROUNDS; }
+                }
             }
 
             let oldXp = userXp; userCoins += earnCoin; userXp += earnXp;
-            if (isOniMode && myRank === 1 && !oniModeFailed) oniTickets += 1;
+            if (isOniMode && myRank === 1 && !oniModeFailed) { oniTickets += 1; }
             saveUserData();
 
             const statType = isPvP ? 'pvp' : 'cpu';
-            userStats[statType].matches++; userStats[statType].totalRank += myRank; if(myRank >= 1 && myRank <= 4) userStats[statType].rankCounts[myRank - 1]++;
+            userStats[statType].matches++; userStats[statType].totalRank += myRank;
+            if(myRank >= 1 && myRank <= 4) userStats[statType].rankCounts[myRank - 1]++;
             if (myRank === 1) userStats[statType].wins++; localStorage.setItem('yaniv_stats', JSON.stringify(userStats));
             if(isHost) saveHistory(finalData, "完結");
 
-            const unit = isOfflineMode ? "点" : "杯"; $('table-header-row').innerHTML = `<th>順位</th><th>プレイヤー</th><th colspan="3">最終累計</th>`;
-            const tbody = $('result-tbody'); tbody.innerHTML = ''; let rank = 1;
+            const unit = isOfflineMode ? "点" : "杯";
+            getEl('table-header-row').innerHTML = `<th>順位</th><th>プレイヤー</th><th colspan="3">最終累計</th>`;
+            const tbody = getEl('result-tbody'); tbody.innerHTML = ''; let rank = 1;
             
             finalData.forEach((res, index) => {
                 if (index > 0 && res.drinks > finalData[index - 1].drinks) rank = index + 1;
-                const tr = document.createElement('tr'); if (res.id === myNetworkId) tr.className = 'me-row'; let totalText = isOfflineMode ? `${-res.drinks}${unit}` : `${res.drinks}${unit}`;
+                const tr = document.createElement('tr'); if (res.id === myNetworkId) tr.className = 'me-row';
+                let totalText = isOfflineMode ? `${-res.drinks}${unit}` : `${res.drinks}${unit}`;
                 tr.innerHTML = `<td>${rank}位</td><td><span class="icon-small" style="width:20px; height:20px; vertical-align:middle; margin-right:4px;">${res.icon}</span> ${res.name}</td><td colspan="3" style="font-weight: bold; color: ${rank === 1 ? '#4caf50' : '#ffeb3b'}; font-size: 16px;">${totalText}</td>`;
                 tbody.appendChild(tr);
             });
             
-            $('modal-btn-single').style.display = 'none'; $('modal-btn-double').style.display = 'none'; $('modal-btn-oni-gacha').style.display = 'none';
+            getEl('modal-btn-single').style.display = 'none'; getEl('modal-btn-double').style.display = 'none'; getEl('modal-btn-oni-gacha').style.display = 'none';
             
             if (isOniMode) {
-                $('modal-btn-single').style.display = 'block'; $('modal-next-btn').textContent = "メインメニューへ戻る"; modalActionState = 'new_game';
-            } else { $('modal-btn-double').style.display = 'flex'; }
+                getEl('modal-btn-single').style.display = 'block';
+                getEl('modal-next-btn').textContent = "メインメニューへ戻る";
+                modalActionState = 'new_game';
+            } else {
+                getEl('modal-btn-double').style.display = 'flex';
+            }
             
-            $('modal-overlay').style.display = 'flex'; $('modal-xp-area').style.display = 'block';
+            getEl('modal-overlay').style.display = 'flex'; getEl('modal-xp-area').style.display = 'block';
             
             if(earnXp === 0) {
-                let info = calcLevel(Math.floor(userXp)); $('modal-lv').textContent = info.level; $('modal-next-xp').textContent = info.next - Math.floor(userXp);
-                let prog = ((userXp - info.base) / (info.next - info.base)) * 100; $('modal-xp-bar').style.width = prog + '%';
+                let info = calcLevel(Math.floor(userXp)); getEl('modal-lv').textContent = info.level; getEl('modal-next-xp').textContent = info.next - Math.floor(userXp);
+                let prog = ((userXp - info.base) / (info.next - info.base)) * 100; getEl('modal-xp-bar').style.width = prog + '%';
                 if (isOniMode && myRank === 1 && !oniModeFailed) { showToast(`🎉 鬼モード制覇！<br><span style="font-size:16px;">鬼ガチャチケット獲得！</span>`, "#ffeb3b"); }
                 else if (earnCoin > 0) { showToast(`🎉 最終結果 ${myRank}位！<br><span style="font-size:20px;">+${earnCoin} G</span>`, "#ffeb3b"); }
             } else {
-                let currentAnimXp = oldXp; let lvFlag = calcLevel(oldXp).level; $('modal-lv').className = ""; 
-                if (xpAnimInterval) clearInterval(xpAnimInterval);
-                
-                xpAnimInterval = setInterval(() => {
-                    currentAnimXp += (earnXp / 30) || 1; 
-                    if(currentAnimXp >= userXp) {
-                        currentAnimXp = userXp; clearInterval(xpAnimInterval);
-                        if (isOniMode && myRank === 1 && !oniModeFailed) { showToast(`🎉 鬼モード制覇！<br><span style="font-size:16px;">+${earnCoin}G / +${earnXp}xp / 鬼チケット獲得！</span>`, "#ffeb3b"); }
-                        else if (earnCoin > 0) { showToast(`🎉 最終結果 ${myRank}位！<br><span style="font-size:20px;">+${earnCoin} G / +${earnXp} xp</span>`, "#ffeb3b"); }
-                    }
-                    let info = calcLevel(Math.floor(currentAnimXp)); $('modal-lv').textContent = info.level; $('modal-next-xp').textContent = info.next - Math.floor(currentAnimXp);
-                    let prog = ((currentAnimXp - info.base) / (info.next - info.base)) * 100; $('modal-xp-bar').style.width = prog + '%';
-                    if(info.level > lvFlag) { lvFlag = info.level; playSound('yaniv'); let el = $('modal-lv'); el.classList.remove('level-up-pop'); void el.offsetWidth; el.classList.add('level-up-pop'); }
-                }, 30);
-            }
-        } catch(e) { console.error("showFinalTotalRanking error:", e); alert("最終結果の表示中にエラーが発生しました。"); leaveRoom(); }
-    }
-
-    let audioCtx = null; function initAudio() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
-    function playSound(type) {
-        if (typeof masterVolume === 'undefined' || masterVolume === 0) return;
-        try { initAudio(); if (!audioCtx) return;
-            const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain(); osc.connect(gainNode); gainNode.connect(audioCtx.destination); const now = audioCtx.currentTime;
-            if (type === 'click') { osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); gainNode.gain.setValueAtTime(0.05 * masterVolume, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.05); osc.start(now); osc.stop(now + 0.05); } 
-            else if (type === 'discard') { osc.type = 'triangle'; osc.frequency.setValueAtTime(350, now); osc.frequency.exponentialRampToValueAtTime(150, now + 0.15); gainNode.gain.setValueAtTime(0.15 * masterVolume, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.15); osc.start(now); osc.stop(now + 0.15); } 
-            else if (type === 'draw') { osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(700, now + 0.2); gainNode.gain.setValueAtTime(0.1 * masterVolume, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.2); osc.start(now); osc.stop(now + 0.2); } 
-            else if (type === 'yaniv') { osc.type = 'square'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.setValueAtTime(659.25, now + 0.08); osc.frequency.setValueAtTime(783.99, now + 0.16); osc.frequency.setValueAtTime(1046.50, now + 0.24); gainNode.gain.setValueAtTime(0.1 * masterVolume, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5); } 
-            else if (type === 'asaf') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(130, now); osc.frequency.linearRampToValueAtTime(100, now + 0.3); gainNode.gain.setValueAtTime(0.2 * masterVolume, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
-            else if (type === 'chat') { osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1); gainNode.gain.setValueAtTime(0.05 * masterVolume, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.1); osc.start(now); osc.stop(now + 0.1); }
-        } catch (e) { console.warn("Audio Context Error:", e); }
-    }
-</script>
-</body>
-</html>
