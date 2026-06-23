@@ -3,73 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ヤニブ (Yaniv) v18</title>
+<title>ヤニブ (Yaniv) v17.6 Ticket System</title>
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100dvh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background-color: #1b5e20; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; touch-action: none; user-select: none; }
+    html, body { height: 100dvh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background-color: #1b5e20; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; }
     input, select, button { touch-action: manipulation; }
 
     #portrait-warning { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background-color: #1b5e20; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
     .rotate-icon { font-size: 70px; margin-bottom: 20px; animation: rotatePhone 2s infinite ease-in-out; }
     @keyframes rotatePhone { 0% { transform: rotate(0deg); } 50% { transform: rotate(-90deg); } 100% { transform: rotate(-90deg); } }
-    .warning-text { font-size: 20px; font-weight: bold; line-height: 1.5; margin-bottom: 10px; }
-
-    /* 通貨UI */
-    .coin-ui { position: absolute; top: 15px; right: 15px; display: flex; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px; border: 2px solid #d4af37; font-weight: bold; color: white; font-size: 14px; z-index: 500; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    .coin-g { width: 20px; height: 20px; background: radial-gradient(circle, #ffd700, #b8860b); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 12px; margin-right: 6px; border: 1px solid #fff; }
-    .item-icon { margin-left: 10px; margin-right: 4px; font-size: 16px; }
     
-    /* トースト通知 */
-    #toast-notification { position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); color: #fff; font-weight: bold; font-size: 16px; padding: 15px 30px; border-radius: 30px; display: none; z-index: 10000; border: 2px solid #ffeb3b; text-align: center; line-height: 1.4; white-space: nowrap; box-shadow: 0 5px 20px rgba(0,0,0,0.6); }
+    .coin-ui { position: absolute; top: 15px; right: 15px; display: flex; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px; border: 2px solid #d4af37; font-weight: bold; color: white; font-size: 14px; z-index: 500; }
+    .coin-g { width: 20px; height: 20px; background: radial-gradient(circle, #ffd700, #b8860b); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 12px; margin-right: 6px; border: 1px solid #fff; }
+    .diamond-icon { margin-left: 10px; margin-right: 4px; font-size: 16px; }
+    
+    #toast-notification { position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); color: #fff; font-weight: bold; font-size: 16px; padding: 15px 30px; border-radius: 30px; display: none; z-index: 10000; border: 2px solid #ffeb3b; text-align: center; line-height: 1.4; white-space: nowrap; }
     @keyframes floatUp { 0% { top: 30%; opacity: 0; transform: translate(-50%, -50%) scale(0.8); } 10% { top: 20%; opacity: 1; transform: translate(-50%, -50%) scale(1.1); } 15% { transform: translate(-50%, -50%) scale(1); } 80% { top: 20%; opacity: 1; } 100% { top: 10%; opacity: 0; } }
 
-    /* 共通メニュー */
     .menu-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; padding: 20px; position: relative; }
     .menu-screen h1 { font-size: 42px; color: #ffeb3b; text-shadow: 2px 2px 0px #000; margin: 0 0 5px 0; letter-spacing: 2px; }
     .menu-subtitle { font-size: 14px; color: #a5d6a7; margin-bottom: 15px; font-weight: bold; width: 100%; max-width: 250px; text-align: center; }
     
-    /* バージョンとUID */
-    .version-info-container { position: absolute; bottom: 15px; right: 20px; text-align: right; color: rgba(255,255,255,0.5); line-height: 1.2; }
-    .version-info-container .uid-text { font-size: 10px; font-family: monospace; }
-    .version-info-container .ver-text { font-size: 12px; font-weight: bold; margin-top: 2px; }
-
-    /* XPバー */
     .xp-bar-container { width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; margin-top: 5px; overflow: hidden; border: 1px solid #388e3c; }
-    .xp-bar-fill { height: 100%; background: #4caf50; width: 0%; transition: width 0.3s ease; }
+    .xp-bar-fill { height: 100%; background: #4caf50; width: 0%; transition: width 0.1s linear; }
     .level-up-pop { animation: lvPop 0.8s forwards; color: #ffeb3b !important; }
     @keyframes lvPop { 0% { transform: scale(1); } 50% { transform: scale(1.8); text-shadow: 0 0 10px #ffeb3b; } 100% { transform: scale(1); } }
 
-    /* パネルとボタン */
     .menu-panel { background-color: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; border: 2px solid #388e3c; width: 100%; max-width: 350px; text-align: left; overflow-y: auto; max-height: 80vh; }
     .menu-panel h3 { margin-top: 0; color: #ffeb3b; text-align: center; margin-bottom: 15px; }
     .setting-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
     
-    .btn { font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: transform 0.1s, filter 0.1s; text-align: center; padding: 12px; font-size: 16px; width: 100%; }
-    .btn:active { transform: scale(0.95); filter: brightness(0.9); }
-    .btn-large { padding: 12px 20px; font-size: 15px; background-color: #ffeb3b; color: #1b5e20; box-shadow: 0 4px 0 #c51162; width: 100%; margin-bottom: 0; }
+    .btn-large { padding: 12px 20px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background-color: #ffeb3b; color: #1b5e20; box-shadow: 0 4px 0 #c51162; width: 80%; max-width: 280px; margin-bottom: 10px; }
     .btn-large:active { transform: translateY(4px); box-shadow: none; }
-    .btn-green { background-color: #4caf50; color: white; margin-top: 10px; }
-    .btn-blue { background-color: #2196f3; color: white; margin-top: 10px; }
-    .btn-red { background-color: #f44336; color: white; margin-top: 10px; }
-    .btn-gray { background-color: #e0e0e0; color: #333; padding: 10px; font-size: 14px; margin-top: 10px; border-radius: 5px; }
+    .btn-secondary { background-color: #e0e0e0; color: #333; padding: 10px; font-size: 14px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; width: 100%; text-align: center; }
+    .btn-success { background-color: #4caf50; color: white; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; width: 100%; text-align: center; margin-top: 10px; }
+
+    .uid-text { position: absolute; bottom: 35px; right: 20px; font-size: 10px; color: rgba(255,255,255,0.4); font-family: monospace; }
+    .version-text { position: absolute; bottom: 15px; right: 20px; font-size: 12px; color: rgba(255,255,255,0.5); font-weight: bold; }
 
     input[type="text"], input[type="number"], select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 100%; font-size: 14px; color: #000; }
     
-    .room-id-box { background:#fff; color:#000; padding:12px; text-align:center; border-radius:8px; margin-bottom:15px; font-weight:bold; font-size:16px; border: 3px dashed #ffeb3b; }
-    .player-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
     .player-slot { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-bottom:8px; }
-    .player-slot.empty { opacity: 0.5; border: 1px dashed #ccc; background: transparent; justify-content: center; }
     
-    /* アイコンとカード */
     .icon { background-color: rgba(255,255,255,0.2); border-radius: 50%; width: 44px; height: 44px; display: flex; justify-content: center; align-items: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
     .icon img { width: 100%; height: 100%; object-fit: cover; }
     .icon-small { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: rgba(255,255,255,0.2); }
     .icon-small img { width: 100%; height: 100%; object-fit: cover; }
-    .icon-preview-box { width: 48px; height: 48px; background-color: rgba(255,255,255,0.15); border: 2px solid #ffeb3b; border-radius: 50%; display: flex; justify-content: center; align-items: center; overflow: hidden; flex-shrink: 0; margin-left: auto; }
-    .icon-preview-box img { width: 100%; height: 100%; object-fit: cover; }
     
-    #card-back-preview { width: 40px; height: 60px; border-radius: 4px; margin-left: auto; flex-shrink: 0; border: 2px solid white; background-size: cover; background-position: center; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+    #card-back-preview { width: 40px; height: 60px; border-radius: 4px; margin-left: auto; flex-shrink: 0; border: 2px solid white; background-size: cover; background-position: center; }
     .back-red { background-color: #b71c1c; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px); }
     .back-blue { background-color: #0d47a1; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px); }
     .back-black { background-color: #212121; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px); }
@@ -80,17 +62,18 @@
     .chat-msg { background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: white; border: 1px solid #4caf50; animation: chatSlideIn 0.3s ease-out, chatFadeOut 0.5s ease-in 4.5s forwards; }
     @keyframes chatSlideIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
     @keyframes chatFadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-10px); } }
-    #chat-toggle-btn { position: fixed; bottom: 15px; left: 15px; background: #ffeb3b; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; z-index: 1000; border: 2px solid #fbc02d; color:#000; cursor:pointer;}
+    #chat-toggle-btn { position: fixed; bottom: 15px; left: 15px; background: #ffeb3b; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; z-index: 1000; border: 2px solid #fbc02d; color:#000; }
     #chat-input-container { position: fixed; bottom: 70px; left: 15px; background: rgba(0,0,0,0.85); padding: 10px; border-radius: 12px; display: flex; gap: 5px; z-index: 1000; border: 2px solid #ffeb3b; }
+    
     #in-game-exit-btn { position: absolute; top: 10px; left: 15px; font-size: 20px; cursor: pointer; z-index: 500; background: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #f44336; }
 
     /* H&L */
-    .hl-card-slot { width: 100px; height: 150px; background: white; border-radius: 10px; margin: 20px auto; border: 4px solid #ffeb3b; display: flex; justify-content: center; align-items: center; position: relative; font-size: 40px; font-weight: bold; color: black; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+    .hl-card-slot { width: 100px; height: 150px; background: white; border-radius: 10px; margin: 20px auto; border: 4px solid #ffeb3b; display: flex; justify-content: center; align-items: center; position: relative; }
 
     /* ショップ＆ガチャ */
     .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-    .shop-item { background: rgba(255,255,255,0.1); border: 2px solid #ffeb3b; border-radius: 10px; padding: 15px 5px; text-align: center; }
-    .shop-item.full-width { grid-column: 1 / -1; border-color:#f44336; background:rgba(244,67,54,0.1); }
+    .shop-item { background: rgba(255,255,255,0.1); border: 2px solid #ffeb3b; border-radius: 10px; padding: 15px 5px; text-align: center; display:flex; flex-direction:column; justify-content:space-between;}
+    .shop-item.full-width { grid-column: 1 / -1; border-color:#e91e63; background:rgba(233,30,99,0.1); }
     #gacha-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; justify-content:center; align-items:center; flex-direction:column; }
     .gacha-box { font-size: 80px; animation: shake 0.5s infinite; margin-bottom: 20px; }
     @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(15deg); } 50% { transform: rotate(0deg); } 75% { transform: rotate(-15deg); } 100% { transform: rotate(0deg); } }
@@ -104,21 +87,7 @@
     .history-table { width: 100%; border-collapse: collapse; }
     .history-table td { padding: 4px 2px; border-bottom: 1px solid rgba(255,255,255,0.1); }
 
-    /* ゲーム演出 */
-    #event-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10001; justify-content:center; align-items:center; }
-    #event-text { font-size:55px; font-weight:bold; color:#fff; animation: eventPop 0.5s forwards; text-align: center; }
-    @keyframes eventPop { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-
-    /* モーダル */
-    #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
-    #result-modal { background-color: #37474f; padding: 15px; border-radius: 12px; text-align: center; width: 95%; max-width: 450px; border: 2px solid #546e7a; max-height: 95dvh; overflow-y: auto; }
-    #result-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
-    #result-table th, #result-table td { padding: 6px 4px; border-bottom: 1px solid #546e7a; }
-    .me-row { background-color: rgba(255, 235, 59, 0.15) !important; outline: 2px solid #ffeb3b; outline-offset: -2px; font-weight: bold; }
-    #custom-confirm-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:20000; justify-content:center; align-items:center; }
-    .confirm-box { background:#37474f; padding:20px; border-radius:12px; text-align:center; width:80%; max-width:300px; border:2px solid #546e7a; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-
-    /* ゲーム盤面 */
+    /* 盤面 */
     #game-container { display: none; flex-direction: column; height: 100dvh; width: 100vw; padding: 5px; }
     #header-area { display: flex; justify-content: space-between; align-items: center; padding: 5px 15px; height: 35px; margin-left: 50px; }
     #game-table { display: grid; grid-template-columns: minmax(80px, 140px) 1fr minmax(80px, 140px); grid-template-rows: 120px 1fr 160px; align-items: center; justify-items: center; width: 100%; max-width: 1000px; margin: 0 auto; gap: 5px; flex: 1; }
@@ -153,6 +122,14 @@
     .action-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%) translateY(10px); background-color: #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; opacity: 0; pointer-events: none; z-index: 100; transition: opacity 0.3s, transform 0.3s; }
     .action-badge.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
 
+    #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+    #result-modal { background-color: #37474f; padding: 15px; border-radius: 12px; text-align: center; width: 95%; max-width: 450px; border: 2px solid #546e7a; }
+    #result-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+    #result-table th, #result-table td { padding: 6px 4px; border-bottom: 1px solid #546e7a; }
+    .me-row { background-color: rgba(255, 235, 59, 0.15) !important; outline: 2px solid #ffeb3b; outline-offset: -2px; font-weight: bold; }
+    #event-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10001; justify-content:center; align-items:center; }
+    #event-text { font-size:55px; font-weight:bold; color:#fff; text-align: center; }
+
     @media (max-width: 768px) {
         #game-table { grid-template-columns: 55px 1fr 55px; grid-template-rows: 85px 1fr 140px; padding: 0 2px; }
         #center-area { gap: 10px; padding: 8px; max-width: 180px; }
@@ -168,12 +145,13 @@
 <div id="portrait-warning"><div class="rotate-icon">📱</div><div class="warning-text">スマホを横向きにしてください</div></div>
 <div id="toast-notification"></div>
 
-<div id="custom-confirm-overlay">
-    <div class="confirm-box">
+<!-- 退出確認ダイアログ -->
+<div id="custom-confirm-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:20000; justify-content:center; align-items:center;">
+    <div style="background:#37474f; padding:20px; border-radius:12px; text-align:center; width:80%; max-width:300px; border:2px solid #546e7a;">
         <h3 style="color:#ffeb3b; margin-top:0; margin-bottom:15px; font-size:16px;" id="custom-confirm-msg"></h3>
         <div style="display:flex; gap:10px;">
-            <button class="btn btn-gray" onclick="closeCustomConfirm()">いいえ</button>
-            <button class="btn btn-red" onclick="executeCustomConfirm()" style="margin-top:0;">はい</button>
+            <button class="btn-secondary" style="flex:1;" onclick="closeCustomConfirm()">いいえ</button>
+            <button class="btn-success" style="flex:1; background:#f44336; margin-top:0;" onclick="executeCustomConfirm()">はい</button>
         </div>
     </div>
 </div>
@@ -182,12 +160,13 @@
 <div id="chat-toggle-btn" style="display:none;" onclick="toggleChatInput()">💬</div>
 <div id="chat-input-container" style="display:none;">
     <input type="text" id="chat-input-text" placeholder="メッセージ..." maxlength="30" autocomplete="off">
-    <button class="btn btn-green" style="margin-top:0; padding:8px 12px; width:auto; border-radius:6px;" onclick="submitChatMessage()">送信</button>
+    <button class="btn-success" style="margin-top:0; padding:8px 12px; width:auto; border-radius:6px;" onclick="submitChatMessage()">送信</button>
 </div>
 
 <div id="in-game-exit-btn" style="display:none;" onclick="confirmLeaveGame()">🚪</div>
 <div id="event-overlay"><div id="event-text"></div></div>
 
+<!-- 1. メインメニュー -->
 <div id="main-menu" class="menu-screen">
     <div class="coin-ui">
         <div class="coin-g">G</div><span id="menu-coins" style="margin-right:10px;">0</span>
@@ -203,12 +182,12 @@
     </div>
     
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; width:100%; max-width:320px; margin-bottom:20px;">
-        <button class="btn btn-large" onclick="switchScreen('room-create-screen')">部屋を作る</button>
-        <button class="btn btn-large" style="background-color:#2196f3; box-shadow:0 4px 0 #0d47a1; color:white;" onclick="switchScreen('room-join-screen')">部屋に参加</button>
-        <button class="btn btn-large" style="background-color:#4caf50; box-shadow:0 4px 0 #2e7d32; color:white;" onclick="switchScreen('offline-select-screen')">ひとりで遊ぶ</button>
-        <button class="btn btn-large" style="background-color:#e0e0e0; box-shadow:0 4px 0 #9e9e9e; color:#333;" onclick="switchScreen('settings-menu')">設定</button>
-        <button class="btn btn-large" style="background-color:#9c27b0; box-shadow:0 4px 0 #6a1b9a; color:white;" onclick="switchScreen('shop-screen')">ショップ</button>
-        <button class="btn btn-large" style="background-color:#ff9800; box-shadow:0 4px 0 #e65100; color:white;" onclick="showStatsScreen()">戦績</button>
+        <button class="btn-large" style="width:100%; margin:0; font-size:15px;" onclick="switchScreen('room-create-screen')">部屋を作る</button>
+        <button class="btn-large" style="width:100%; margin:0; font-size:15px; background-color:#2196f3; box-shadow:0 4px 0 #0d47a1; color:white;" onclick="switchScreen('room-join-screen')">部屋に参加</button>
+        <button class="btn-large" style="width:100%; margin:0; font-size:15px; background-color:#4caf50; box-shadow:0 4px 0 #2e7d32; color:white;" onclick="switchScreen('offline-select-screen')">ひとりで遊ぶ</button>
+        <button class="btn-large" style="width:100%; margin:0; font-size:15px; background-color:#e0e0e0; box-shadow:0 4px 0 #9e9e9e; color:#333;" onclick="switchScreen('settings-menu')">設定</button>
+        <button class="btn-large" style="width:100%; margin:0; font-size:15px; background-color:#9c27b0; box-shadow:0 4px 0 #6a1b9a; color:white;" onclick="switchScreen('shop-screen')">ショップ</button>
+        <button class="btn-large" style="width:100%; margin:0; font-size:15px; background-color:#ff9800; box-shadow:0 4px 0 #e65100; color:white;" onclick="showStatsScreen()">戦績</button>
     </div>
 
     <div style="display:flex; justify-content:center; gap:30px;">
@@ -224,23 +203,25 @@
     
     <div class="version-info-container">
         <div class="uid-text">UID: <span id="uid-display"></span></div>
-        <div class="ver-text">v18 Ticket System</div>
+        <div class="ver-text">v17.6 Ticket System</div>
     </div>
 </div>
 
+<!-- 2. オフライン選択 -->
 <div id="offline-select-screen" class="menu-screen" style="display: none;">
     <div class="menu-panel" style="max-width: 350px;">
         <h3>ひとりで遊ぶ</h3>
-        <button class="btn btn-large" style="width:100%; background-color:#4caf50; color:white; box-shadow:0 4px 0 #2e7d32;" onclick="setupOfflineLobby(false)">
+        <button class="btn-large" style="width:100%; font-size:16px; margin-bottom:15px; background-color:#4caf50; color:white; box-shadow:0 4px 0 #2e7d32;" onclick="setupOfflineLobby(false)">
             通常モード<br><span style="font-size:11px; font-weight:normal;">無料 / 報酬少なめ</span>
         </button>
-        <button class="btn btn-large" style="width:100%; background-color:#f44336; color:white; box-shadow:0 4px 0 #b71c1c;" onclick="setupOfflineLobby(true)">
+        <button class="btn-large" style="width:100%; font-size:16px; margin-bottom:15px; background-color:#f44336; color:white; box-shadow:0 4px 0 #b71c1c;" onclick="setupOfflineLobby(true)">
             鬼モード (100 G)<br><span style="font-size:11px; font-weight:normal;">総合1位で鬼ガチャチケット獲得！</span>
         </button>
-        <button class="btn btn-gray" onclick="switchScreen('main-menu')">戻る</button>
+        <button class="btn-secondary" onclick="switchScreen('main-menu')">戻る</button>
     </div>
 </div>
 
+<!-- 3. H&L ミニゲーム -->
 <div id="hl-screen" class="menu-screen" style="display: none;">
     <div class="coin-ui"><div class="coin-g">G</div><span id="hl-coins">0</span></div>
     <div class="menu-panel" style="max-width: 350px; text-align:center;">
@@ -250,26 +231,27 @@
         <div id="hl-setup">
             <div style="margin-bottom:15px; font-size:14px;">次のカードが前のカードより<br>大きいか小さいかを当てるゲーム！</div>
             <input type="number" id="hl-bet-input" placeholder="参加費(G)を入力" min="1" style="width:80%; margin-bottom:15px; text-align:center; font-size:18px;">
-            <button class="btn btn-green" style="width:80%; margin-top:0;" onclick="startHL()">プレイ開始</button>
-            <button class="btn btn-gray" style="width:80%;" onclick="switchScreen('main-menu')">戻る</button>
+            <button class="btn-success" style="width:80%; margin-top:0;" onclick="startHL()">プレイ開始</button>
+            <button class="btn-secondary" style="width:80%; margin-top:10px;" onclick="switchScreen('main-menu')">戻る</button>
         </div>
 
         <div id="hl-play" style="display:none;">
             <div style="font-size:14px; font-weight:bold; color:#ffeb3b; margin-bottom:5px;">現在の連勝: <span id="hl-current-streak" style="font-size:20px;">0</span> 回</div>
             <div style="font-size:12px; color:#a5d6a7; margin-bottom:10px;">見込み配当: <span id="hl-current-payout">0</span> G (x<span id="hl-multi">0</span>)</div>
             
-            <div class="hl-card-slot" id="hl-card-display">?</div>
+            <div class="hl-card-slot" id="hl-card-display" style="font-size: 50px; font-weight: bold; color: black;">?</div>
             
             <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px;">
-                <button class="btn btn-red" style="width:120px; margin-top:0; padding:15px;" onclick="guessHL('high')">HIGH (↑)</button>
-                <button class="btn btn-blue" style="width:120px; margin-top:0; padding:15px;" onclick="guessHL('low')">LOW (↓)</button>
+                <button class="btn-success" style="background:#f44336; width:120px; margin-top:0; padding:15px;" onclick="guessHL('high')">HIGH (↑)</button>
+                <button class="btn-success" style="background:#2196f3; width:120px; margin-top:0; padding:15px;" onclick="guessHL('low')">LOW (↓)</button>
             </div>
             
-            <button class="btn" style="background:#ff9800; color:white; width:90%; padding:10px; border-radius:5px;" onclick="exitHL()">降りて報酬を確定</button>
+            <button class="btn-secondary" style="background:#ff9800; color:white; width:90%; padding:10px; border-radius:5px;" onclick="exitHL()">降りて報酬を確定</button>
         </div>
     </div>
 </div>
 
+<!-- 4. ショップ -->
 <div id="shop-screen" class="menu-screen" style="display: none;">
     <div class="coin-ui">
         <div class="coin-g">G</div><span id="shop-coins" style="margin-right:10px;">0</span>
@@ -281,20 +263,20 @@
             <div class="shop-item">
                 <div style="font-size:30px; margin-bottom:5px;">📦</div>
                 <div style="font-size:13px; font-weight:bold;">アイコンガチャ</div>
-                <button class="btn btn-green" style="width:90%; padding:8px; font-size:13px;" onclick="openGacha('icon')">100 G</button>
+                <button class="btn-success" style="width:90%; padding:8px; font-size:13px; margin-top:10px;" onclick="openGacha('icon')">100 G</button>
             </div>
             <div class="shop-item">
                 <div style="font-size:30px; margin-bottom:5px;">🎴</div>
                 <div style="font-size:13px; font-weight:bold;">裏面ガチャ</div>
-                <button class="btn btn-green" style="width:90%; padding:8px; font-size:13px;" onclick="openGacha('back')">100 G</button>
+                <button class="btn-success" style="width:90%; padding:8px; font-size:13px; margin-top:10px;" onclick="openGacha('back')">100 G</button>
             </div>
             <div class="shop-item full-width">
                 <div style="font-size:30px; margin-bottom:5px;">👹</div>
                 <div style="font-size:14px; font-weight:bold; color:#f44336;">鬼ガチャ (限定)</div>
-                <button class="btn btn-red" style="width:90%; padding:8px; font-size:14px;" onclick="openOniGacha()">1 🎟️</button>
+                <button class="btn-success" style="width:90%; padding:8px; font-size:14px; background:#f44336; margin-top:10px;" onclick="openOniGacha()">1 🎟️</button>
             </div>
         </div>
-        <button class="btn btn-gray" onclick="switchScreen('main-menu')">戻る</button>
+        <button class="btn-secondary" onclick="switchScreen('main-menu')">戻る</button>
     </div>
 </div>
 
@@ -302,9 +284,10 @@
     <div class="gacha-box" id="gacha-box-anim">📦</div>
     <div class="gacha-result" id="gacha-result-icon"></div>
     <div style="color:white; font-weight:bold; margin-top:20px; font-size:20px; display:none;" id="gacha-result-text">ゲット！</div>
-    <button class="btn btn-gray" style="width:120px; display:none;" id="gacha-close-btn" onclick="closeGacha()">戻る</button>
+    <button class="btn-secondary" style="width:120px; margin-top:20px; display:none;" id="gacha-close-btn" onclick="closeGacha()">戻る</button>
 </div>
 
+<!-- 5. 戦績 -->
 <div id="stats-screen" class="menu-screen" style="display: none;">
     <div class="menu-panel" style="max-width: 400px; width:90%; padding:15px; text-align:center;">
         <h3 style="margin-bottom:5px;">戦績プロフィール</h3>
@@ -312,19 +295,17 @@
             Lv.<span id="stats-lv"></span> (次まで <span id="stats-next-xp"></span>xp)
             <div class="xp-bar-container" style="max-width:200px; margin: 5px auto;"><div class="xp-bar-fill" id="stats-xp-bar"></div></div>
         </div>
-        
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:14px;">
-            <button class="btn btn-blue" id="tab-pvp" style="width:32%; padding:8px; margin-top:0;" onclick="showStatsTab('pvp')">対人戦</button>
-            <button class="btn btn-green" id="tab-cpu" style="width:32%; padding:8px; margin-top:0;" onclick="showStatsTab('cpu')">CPU戦</button>
-            <button class="btn" id="tab-history" style="width:32%; background:#ff9800; color:white; padding:8px; border-radius:8px;" onclick="showStatsTab('history')">履歴</button>
+            <button class="btn-success" id="tab-pvp" style="width:32%; background:#2196f3; padding:8px; margin-top:0;" onclick="showStatsTab('pvp')">対人戦</button>
+            <button class="btn-success" id="tab-cpu" style="width:32%; background:#4caf50; padding:8px; margin-top:0;" onclick="showStatsTab('cpu')">CPU戦</button>
+            <button class="btn-secondary" id="tab-history" style="width:32%; background:#ff9800; color:white; padding:8px;" onclick="showStatsTab('history')">履歴</button>
         </div>
-        
-        <div id="stats-content" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; text-align:left; font-size:14px; border:1px solid #546e7a; max-height:40vh; overflow-y:auto;">
-        </div>
-        <button class="btn btn-gray" onclick="switchScreen('main-menu')">戻る</button>
+        <div id="stats-content" style="background:rgba(0,0,0,0.3); padding:15px; border-radius:8px; text-align:left; font-size:14px; border:1px solid #546e7a; max-height:40vh; overflow-y:auto;"></div>
+        <button class="btn-secondary" onclick="switchScreen('main-menu')" style="margin-top: 15px;">戻る</button>
     </div>
 </div>
 
+<!-- 6. 設定 -->
 <div id="settings-menu" class="menu-screen" style="display: none;">
     <div class="menu-panel">
         <h3>ゲーム設定</h3>
@@ -346,10 +327,11 @@
                 <div id="icon-preview" class="icon-preview-box"></div>
             </div>
         </div>
-        <button class="btn btn-green" onclick="saveSettingsAndReturn()" style="margin-top:20px;">保存して戻る</button>
+        <button class="btn-success" onclick="saveSettingsAndReturn()" style="margin-top: 20px;">保存して戻る</button>
     </div>
 </div>
 
+<!-- 7. ルーム作成 -->
 <div id="room-create-screen" class="menu-screen" style="display: none;">
     <div class="menu-panel">
         <h3>部屋を作成 (ホスト)</h3>
@@ -361,7 +343,6 @@
                 <option value="CUSTOM">カスタムルール</option>
             </select>
         </div>
-        
         <div id="custom-rule-area" style="display:none; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; margin-bottom:15px; font-size:13px; border: 1px solid #546e7a;">
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; align-items:center;">
                 <label style="color:#fff;">負け</label>
@@ -376,16 +357,16 @@
                 <input type="checkbox" id="custom-all-lose" style="width:20px; height:20px; accent-color: #ffeb3b;">
             </div>
         </div>
-
         <div class="setting-item">
             <label>試合数</label>
             <input type="number" id="room-rounds" value="5" min="1" max="20">
         </div>
-        <button class="btn btn-green" onclick="createRoom()">部屋を作る</button>
-        <button class="btn btn-gray" onclick="switchScreen('main-menu')">戻る</button>
+        <button class="btn-success" onclick="createRoom()">部屋を作る</button>
+        <button class="btn-secondary" onclick="switchScreen('main-menu')" style="margin-top: 10px;">戻る</button>
     </div>
 </div>
 
+<!-- 8. ゲスト参加 -->
 <div id="room-join-screen" class="menu-screen" style="display: none;">
     <div class="menu-panel">
         <h3>部屋に参加 (ゲスト)</h3>
@@ -393,11 +374,12 @@
             <label>部屋ID (5桁の数字)</label>
             <input type="text" id="join-room-id" placeholder="例: 12345" maxlength="5" autocomplete="off" style="font-size:24px; font-weight:bold; text-align:center; letter-spacing:4px;">
         </div>
-        <button class="btn btn-blue" onclick="joinRoom()">参加する</button>
-        <button class="btn btn-gray" onclick="switchScreen('main-menu')">戻る</button>
+        <button class="btn-success" style="background-color: #2196f3;" onclick="joinRoom()">参加する</button>
+        <button class="btn-secondary" onclick="switchScreen('main-menu')" style="margin-top: 10px;">戻る</button>
     </div>
 </div>
 
+<!-- 9. 待機ロビー -->
 <div id="room-waiting-screen" class="menu-screen" style="display: none;">
     <div class="menu-panel">
         <h3 id="lobby-title">待機ロビー</h3>
@@ -408,120 +390,104 @@
         
         <div id="host-controls" style="display: none;">
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button class="btn btn-blue" style="margin-top:0;" onclick="addCPU()">+ CPU</button>
-                <button class="btn btn-red" style="margin-top:0;" onclick="removeCPU()">- CPU</button>
+                <button class="btn-success" style="background-color: #2196f3; margin-top:0;" onclick="addCPU()">+ CPU</button>
+                <button class="btn-success" style="background-color: #f44336; margin-top:0;" onclick="removeCPU()">- CPU</button>
             </div>
-            <button class="btn btn-green" onclick="startNetworkGame()" style="font-size: 18px;">ゲーム開始！</button>
+            <button class="btn-success" onclick="startNetworkGame()" style="font-size: 18px;">ゲーム開始！</button>
         </div>
         <div id="guest-controls" style="display: none; text-align: center; color: #ffeb3b; font-weight: bold; margin-bottom: 10px;">
             ホストがゲームを開始するのを待っています...
         </div>
-        <button class="btn btn-gray" onclick="confirmLeaveRoom()">退出して戻る</button>
+        <button class="btn-secondary" onclick="confirmLeaveRoom()" style="margin-top: 10px;">退出して戻る</button>
     </div>
 </div>
 
+<!-- 10. ゲーム画面 -->
 <div id="game-container">
     <div id="header-area">
         <div id="turn-indicator">準備中...</div>
         <div id="round-counter">第 1 / 5 ラウンド</div>
     </div>
     <div id="game-table">
-        <div id="area-2" class="player-area" style="display:none;">
-            <div class="action-badge" id="action-2"></div>
-            <div class="h-row">
-                <span class="icon" id="icon-2"></span>
-                <span class="player-name" id="name-2"></span>
-                <span class="vp-score">🍺 <span id="drink-2">0</span></span>
-                <span class="sum-text">計: <span id="sum-2">?</span></span>
-            </div>
-            <div id="cpu2-hand" class="hand"></div>
-        </div>
+        <div id="area-2" class="player-area" style="display:none;"><div class="action-badge" id="action-2"></div><div class="h-row"><span class="icon" id="icon-2"></span><span class="player-name" id="name-2"></span><span class="vp-score">🍺 <span id="drink-2">0</span></span><span class="sum-text">計: <span id="sum-2">?</span></span></div><div id="cpu2-hand" class="hand"></div></div>
         
-        <div id="area-1" class="player-area side-area" style="display:none;">
-            <div class="action-badge" id="action-1"></div>
-            <div class="v-col">
-                <span class="icon" id="icon-1"></span>
-                <span class="player-name" id="name-1"></span>
-                <span class="vp-score">🍺<span id="drink-1">0</span></span>
-                <span class="sum-text">計:<span id="sum-1">?</span></span>
-            </div>
-            <div id="cpu1-hand" class="hand"></div>
-        </div>
+        <div id="area-1" class="player-area side-area" style="display:none;"><div class="action-badge" id="action-1"></div><div class="v-col"><span class="icon" id="icon-1"></span><span class="player-name" id="name-1"></span><span class="vp-score">🍺<span id="drink-1">0</span></span><span class="sum-text">計:<span id="sum-1">?</span></span></div><div id="cpu1-hand" class="hand"></div></div>
         
         <div id="center-area">
             <div class="pile-container"><div class="pile-label">山札 (<span id="deck-count">0</span>)</div><div id="deck-pile" class="pile card back"></div></div>
             <div class="pile-container"><div class="pile-label">捨て札</div><div id="discard-pile" class="pile"></div></div>
         </div>
         
-        <div id="area-3" class="player-area side-area" style="display:none;">
-            <div class="action-badge" id="action-3"></div>
-            <div class="v-col">
-                <span class="icon" id="icon-3"></span>
-                <span class="player-name" id="name-3"></span>
-                <span class="vp-score">🍺<span id="drink-3">0</span></span>
-                <span class="sum-text">計:<span id="sum-3">?</span></span>
-            </div>
-            <div id="cpu3-hand" class="hand"></div>
-        </div>
+        <div id="area-3" class="player-area side-area" style="display:none;"><div class="action-badge" id="action-3"></div><div class="v-col"><span class="icon" id="icon-3"></span><span class="player-name" id="name-3"></span><span class="vp-score">🍺<span id="drink-3">0</span></span><span class="sum-text">計:<span id="sum-3">?</span></span></div><div id="cpu3-hand" class="hand"></div></div>
         
-        <div id="area-0" class="player-area" style="display:none;">
-            <div class="action-badge" id="action-0"></div>
-            <div class="h-row">
-                <span class="icon" id="icon-0"></span>
-                <span class="player-name" id="name-0"></span>
-                <span class="vp-score">🍺 <span id="drink-0">0</span></span>
-                <span class="sum-text">計: <span id="sum-0">0</span></span>
-            </div>
-            <div id="player-hand" class="hand"></div>
-            
+        <div id="area-0" class="player-area" style="display:none;"><div class="action-badge" id="action-0"></div><div class="h-row"><span class="icon" id="icon-0"></span><span class="player-name" id="name-0"></span><span class="vp-score">🍺 <span id="drink-0">0</span></span><span class="sum-text">計: <span id="sum-0">0</span></span></div><div id="player-hand" class="hand"></div>
             <div style="min-height: 40px; width: 100%; display: flex; justify-content: center; gap: 8px; margin-top: 8px;" id="player-controls">
-                <button id="draw-deck-btn" class="btn btn-blue" style="margin-top:0; padding:8px 10px; font-size:13px; flex:1; max-width:120px;" onclick="executeTurn('deck')" disabled>山から引く</button>
-                <button id="draw-discard-btn" class="btn btn-blue" style="margin-top:0; padding:8px 10px; font-size:13px; flex:1; max-width:120px;" onclick="executeTurn('discard')" disabled>場から拾う</button>
-                <button id="yaniv-btn" class="btn btn-red" style="margin-top:0; padding:8px 10px; font-size:13px; flex:1; max-width:120px; display:none;" onclick="declareYaniv(myNetworkId)">ヤニブ！</button>
+                <button id="draw-deck-btn" class="btn-success" style="background:#2196f3; margin-top:0; padding:8px 10px; font-size:13px; flex:1; max-width:120px;" onclick="executeTurn('deck')" disabled>山から引く</button>
+                <button id="draw-discard-btn" class="btn-success" style="background:#2196f3; margin-top:0; padding:8px 10px; font-size:13px; flex:1; max-width:120px;" onclick="executeTurn('discard')" disabled>場から拾う</button>
+                <button id="yaniv-btn" class="btn-success" style="background:#f44336; margin-top:0; padding:8px 10px; font-size:13px; flex:1; max-width:120px; display:none;" onclick="declareYaniv(myNetworkId)">ヤニブ！</button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- 11. リザルトモーダル -->
 <div id="modal-overlay">
     <div id="result-modal">
         <h2 id="modal-title">結果発表</h2>
         <h3 id="modal-subtitle" style="color:#a5d6a7;"></h3>
-        
         <div id="modal-xp-area" style="display:none; font-size:12px; color:#a5d6a7; margin-bottom:10px; font-weight:bold;">
             Lv.<span id="modal-lv"></span> (次まで <span id="modal-next-xp"></span>xp)
             <div class="xp-bar-container" style="max-width:250px; margin: 5px auto;"><div class="xp-bar-fill" id="modal-xp-bar"></div></div>
         </div>
-
         <table id="result-table">
             <thead><tr id="table-header-row"><th>順位</th><th>プレイヤー</th><th>合計</th><th>ペナルティ</th><th>累計</th></tr></thead>
             <tbody id="result-tbody"></tbody>
         </table>
-        
         <div id="modal-btn-single" style="display:none; margin-top:15px;">
-            <button class="btn btn-green" id="modal-next-btn" onclick="handleModalNext()"></button>
+            <button class="btn-success" id="modal-next-btn" onclick="handleModalNext()"></button>
         </div>
         <div id="modal-btn-double" style="display:none; gap:10px; margin-top:15px;">
-            <button class="btn btn-green" style="flex:1; margin-top:0;" onclick="returnToLobby()">ロビーへ</button>
-            <button class="btn btn-red" style="flex:1; margin-top:0;" onclick="confirmLeaveRoom()">退出</button>
+            <button class="btn-success" style="flex:1; margin-top:0;" onclick="returnToLobby()">ロビーへ</button>
+            <button class="btn-success" style="flex:1; background:#f44336; margin-top:0;" onclick="confirmLeaveRoom()">退出</button>
         </div>
     </div>
 </div>
 
+<!-- ============================================== -->
+<!-- JavaScript                                       -->
+<!-- ============================================== -->
 <script>
-    // ----------------------------------------------------
-    // ユーティリティ・DOM取得
-    // ----------------------------------------------------
     const $ = id => document.getElementById(id);
 
-    // ----------------------------------------------------
-    // データ保護・定数
-    // ----------------------------------------------------
+    // --- 画面遷移 ---
+    function switchScreen(screenId) {
+        try {
+            document.querySelectorAll('.menu-screen').forEach(el => el.style.display = 'none');
+            const gc = $('game-container'); if(gc) gc.style.display = 'none';
+            const mo = $('modal-overlay'); if(mo) mo.style.display = 'none';
+            const target = $(screenId); if(target) target.style.display = 'flex';
+            
+            const chatBtn = $('chat-toggle-btn'); const chatInput = $('chat-input-container'); const exitBtn = $('in-game-exit-btn');
+            if (exitBtn) exitBtn.style.display = (screenId === 'game-container') ? 'flex' : 'none';
+            if (chatBtn && chatInput) {
+                if ((screenId === 'room-waiting-screen' || screenId === 'game-container') && !isOfflineMode) { chatBtn.style.display = 'flex'; } 
+                else { chatBtn.style.display = 'none'; chatInput.style.display = 'none'; }
+            }
+            if (screenId === 'room-join-screen') { const joinInp = $('join-room-id'); if(joinInp) joinInp.value = ''; }
+        } catch(e) { console.error("switchScreen error:", e); }
+    }
+
+    // --- カスタムダイアログ ---
+    let confirmAction = null;
+    function showCustomConfirm(msg, action) { $('custom-confirm-msg').innerHTML = msg; confirmAction = action; $('custom-confirm-overlay').style.display = 'flex'; }
+    function closeCustomConfirm() { $('custom-confirm-overlay').style.display = 'none'; confirmAction = null; }
+    function executeCustomConfirm() { if(confirmAction) confirmAction(); closeCustomConfirm(); }
+    function confirmLeaveRoom() { showCustomConfirm("本当に退出して戻りますか？", leaveRoom); }
+    function confirmLeaveGame() { showCustomConfirm("本当にゲームを終了して戻りますか？<br><span style='font-size:12px;color:#f44336;'>(進行状況は破棄されます)</span>", leaveRoom); }
+
+    // --- データ保護＆定数定義 ---
     let userStats = { pvp: { matches: 0, wins: 0, totalRank: 0, rankCounts: [0,0,0,0] }, cpu: { matches: 0, wins: 0, totalRank: 0, rankCounts: [0,0,0,0] } };
-    try { 
-        let parsed = JSON.parse(localStorage.getItem('yaniv_stats')); 
-        if(parsed && parsed.pvp) { userStats.pvp = { ...userStats.pvp, ...parsed.pvp }; userStats.cpu = { ...userStats.cpu, ...parsed.cpu }; } 
-    } catch(e) {}
+    try { let parsed = JSON.parse(localStorage.getItem('yaniv_stats')); if(parsed && parsed.pvp) { userStats.pvp = { ...userStats.pvp, ...parsed.pvp }; userStats.cpu = { ...userStats.cpu, ...parsed.cpu }; } } catch(e) {}
     if(!Array.isArray(userStats.pvp.rankCounts) || userStats.pvp.rankCounts.length !== 4) userStats.pvp.rankCounts = [0,0,0,0]; 
     if(!Array.isArray(userStats.cpu.rankCounts) || userStats.cpu.rankCounts.length !== 4) userStats.cpu.rankCounts = [0,0,0,0];
     
@@ -534,11 +500,10 @@
 
     const iconData = { 'icon_default.png': 'デフォルト', 'icon_kaeru.png': 'かえる', 'icon_kyuuri.png': 'きゅうり', 'icon_yuuto.png': 'ゆうと', 'icon_pien.png': 'ぴえん', 'icon_zombie.png': 'ゾンビ', 'icon_happy.png': 'ハッピー', 'icon_piero.png': 'ピエロ', 'icon_ringo.png': 'りんご', 'icon_gun.png': 'ガンナー', 'icon_kaeruman.png': 'マッチョ', 'icon_miko.png': '巫女', 'icon_birthday.png': 'ケーキ', 'icon_hugu.png': 'ふぐ', 'icon_tekira.png': 'テキーラ', 'icon_tekira2.png': 'テキーラ2', 'icon_sanchan.png': '冷やし中華', 'icon_dice.png': 'サイコロ', 'icon_oni.png': '鬼 (限定)' };
     const cardBackData = { 'back-red': '色: 赤', 'back-blue': '色: 青', 'back-black': '色: 黒', 'card_kaeru.png': 'かえる', 'card_pien.png': 'ぴえん', 'card_zombie.png': 'ゾンビ', 'card_piero.png': 'ピエロ', 'card_ringo.png': 'リンゴ', 'card_kaeruman.png': 'マッチョ', 'card_star.png': '星', 'card_miko.png': '巫女', 'card_hatena.png': '？？？' };
+
     const suits = ['♠', '♥', '♦', '♣']; const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-    // ----------------------------------------------------
-    // 変数・セーブデータ
-    // ----------------------------------------------------
+    // --- 変数・セーブデータ読み込み ---
     let userCoins = parseInt(localStorage.getItem('yaniv_coins')); if(isNaN(userCoins)) userCoins = 0;
     let userDiamonds = parseInt(localStorage.getItem('yaniv_diamonds')); if(isNaN(userDiamonds)) userDiamonds = 0;
     let userXp = parseInt(localStorage.getItem('yaniv_xp')); if(isNaN(userXp)) userXp = 0;
@@ -548,14 +513,8 @@
     let myIconStr = localStorage.getItem('yaniv_icon') || 'icon_default.png'; 
     let myCardBack = localStorage.getItem('yaniv_card_back') || 'back-red'; 
     let masterVolume = 0.8; 
-
     let myUid = localStorage.getItem('yaniv_uid');
-    if (!myUid) {
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const rnd = () => Math.floor(Math.random()*10000).toString().padStart(4, '0');
-        myUid = `${rnd()}-${rnd()}-${rnd()}-${rnd()}-${letters[Math.floor(Math.random()*26)]}`;
-        localStorage.setItem('yaniv_uid', myUid);
-    }
+    if (!myUid) { const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; const rnd = () => Math.floor(Math.random()*10000).toString().padStart(4, '0'); myUid = `${rnd()}-${rnd()}-${rnd()}-${rnd()}-${letters[Math.floor(Math.random()*26)]}`; localStorage.setItem('yaniv_uid', myUid); }
     if(!iconData[myIconStr]) myIconStr = 'icon_default.png';
 
     function calcLevel(xp) {
@@ -581,13 +540,11 @@
     let currentTurn = 0; let gameEnded = false; let firstPlayer = 0; 
     let currentRound = 1; let MAX_ROUNDS = 5; let modalActionState = 'next_round'; 
     let ruleType = "KD"; let customLose = 1; let customAsaf = 2; let customAllLose = false;
-    let isOfflineMode = false; let isOniMode = false; let oniModeFailed = false;
+    let isOfflineMode = false; let isOniMode = false;
     let peer = null; let isHost = true; let hostConnection = null; let guestConnections = []; let myNetworkId = 0; 
     let treasureTimerInter = null; let xpAnimInterval = null;
 
-    // ----------------------------------------------------
-    // 初期起動
-    // ----------------------------------------------------
+    // --- 初期起動 ---
     window.onload = () => {
         try {
             if($('my-name-input')) $('my-name-input').value = myName;
@@ -610,38 +567,12 @@
         } catch(e) { console.error("onload error:", e); }
     };
 
-    // ----------------------------------------------------
-    // UI・画面遷移
-    // ----------------------------------------------------
-    function switchScreen(screenId) {
-        try {
-            document.querySelectorAll('.menu-screen').forEach(el => el.style.display = 'none');
-            const gc = $('game-container'); if(gc) gc.style.display = 'none';
-            const mo = $('modal-overlay'); if(mo) mo.style.display = 'none';
-            const target = $(screenId); if(target) target.style.display = 'flex';
-            
-            const chatBtn = $('chat-toggle-btn'); const chatInput = $('chat-input-container'); const exitBtn = $('in-game-exit-btn');
-            if (exitBtn) exitBtn.style.display = (screenId === 'game-container') ? 'flex' : 'none';
-            if (chatBtn && chatInput) {
-                if ((screenId === 'room-waiting-screen' || screenId === 'game-container') && !isOfflineMode) { chatBtn.style.display = 'flex'; } 
-                else { chatBtn.style.display = 'none'; chatInput.style.display = 'none'; }
-            }
-            if (screenId === 'room-join-screen') { const joinInp = $('join-room-id'); if(joinInp) joinInp.value = ''; }
-        } catch(e) { console.error("switchScreen error:", e); }
-    }
-
+    // --- UI更新 ---
     function showToast(msg, color="#fff") {
         const toast = $('toast-notification'); if(!toast) return;
         toast.innerHTML = `<span style="color:${color};">${msg}</span>`; toast.style.display = 'block'; toast.style.animation = 'none'; 
         void toast.offsetWidth; toast.style.animation = 'floatUp 3.5s ease-out forwards'; setTimeout(() => { toast.style.display = 'none'; }, 3500);
     }
-
-    let confirmAction = null;
-    function showCustomConfirm(msg, action) { $('custom-confirm-msg').innerHTML = msg; confirmAction = action; $('custom-confirm-overlay').style.display = 'flex'; }
-    function closeCustomConfirm() { $('custom-confirm-overlay').style.display = 'none'; confirmAction = null; }
-    function executeCustomConfirm() { if(confirmAction) confirmAction(); closeCustomConfirm(); }
-    function confirmLeaveRoom() { showCustomConfirm("本当に退出して戻りますか？", leaveRoom); }
-    function confirmLeaveGame() { showCustomConfirm("本当にゲームを終了して戻りますか？<br><span style='font-size:12px;color:#f44336;'>(進行状況は破棄されます)</span>", leaveRoom); }
 
     function updateLevelUI() {
         try {
@@ -671,9 +602,7 @@
         updateCurrencyUI(); updateLevelUI();
     }
 
-    // ----------------------------------------------------
-    // おまけ機能
-    // ----------------------------------------------------
+    // --- おまけ機能 ---
     function updateTreasureTimer() {
         let lastTime = parseInt(localStorage.getItem('yaniv_treasure_time')) || 0; let now = Date.now(); let diff = now - lastTime; let waitTime = 3 * 60 * 60 * 1000;
         let textEl = $('treasure-text'); if(!textEl) return;
@@ -790,6 +719,13 @@
     function closeGacha() { $('gacha-overlay').style.display = 'none'; }
 
     // ----------------------------------------------------
+    // チャット
+    // ----------------------------------------------------
+    function toggleChatInput() { const container = $('chat-input-container'); container.style.display = container.style.display === 'none' ? 'flex' : 'none'; if (container.style.display === 'flex') $('chat-input-text').focus(); }
+    function submitChatMessage() { const input = $('chat-input-text'); const text = input.value.trim(); if (!text) return; input.value = ''; toggleChatInput(); displayChatMessage(myNetworkId, text); const data = { type: 'CHAT', senderId: myNetworkId, text: text }; if (isHost && guestConnections.length > 0) guestConnections.forEach(c => c.send(data)); else if (!isHost && hostConnection) hostConnection.send(data); }
+    function displayChatMessage(senderId, text) { const p = players.find(x => x.id === senderId); if (!p) return; const container = $('chat-display-container'); const msgEl = document.createElement('div'); msgEl.className = 'chat-msg'; msgEl.innerHTML = `<span class="icon-small" style="width:22px;height:22px;">${p.icon}</span> <strong>${p.name}:</strong> <span>${text}</span>`; container.appendChild(msgEl); playSound('chat'); setTimeout(() => { if(msgEl.parentNode) msgEl.remove(); }, 5000); }
+
+    // ----------------------------------------------------
     // 戦績
     // ----------------------------------------------------
     function showStatsScreen() { switchScreen('stats-screen'); updateLevelUI(); showStatsTab('pvp'); }
@@ -812,13 +748,6 @@
     }
     function saveHistory(finalData, note="") { let history = JSON.parse(localStorage.getItem('yaniv_history')) || []; const dateStr = new Date().toLocaleString(); history.unshift({ date: dateStr, players: finalData, isOffline: isOfflineMode, note: note }); if(history.length > 20) history = history.slice(0, 20); localStorage.setItem('yaniv_history', JSON.stringify(history)); }
     function deleteHistory(idx) { let history = JSON.parse(localStorage.getItem('yaniv_history')) || []; history.splice(idx, 1); localStorage.setItem('yaniv_history', JSON.stringify(history)); showStatsTab('history'); }
-
-    // ----------------------------------------------------
-    // チャット
-    // ----------------------------------------------------
-    function toggleChatInput() { const container = $('chat-input-container'); container.style.display = container.style.display === 'none' ? 'flex' : 'none'; if (container.style.display === 'flex') $('chat-input-text').focus(); }
-    function submitChatMessage() { const input = $('chat-input-text'); const text = input.value.trim(); if (!text) return; input.value = ''; toggleChatInput(); displayChatMessage(myNetworkId, text); const data = { type: 'CHAT', senderId: myNetworkId, text: text }; if (isHost && guestConnections.length > 0) guestConnections.forEach(c => c.send(data)); else if (!isHost && hostConnection) hostConnection.send(data); }
-    function displayChatMessage(senderId, text) { const p = players.find(x => x.id === senderId); if (!p) return; const container = $('chat-display-container'); const msgEl = document.createElement('div'); msgEl.className = 'chat-msg'; msgEl.innerHTML = `<span class="icon-small" style="width:22px;height:22px;">${p.icon}</span> <strong>${p.name}:</strong> <span>${text}</span>`; container.appendChild(msgEl); playSound('chat'); setTimeout(() => { if(msgEl.parentNode) msgEl.remove(); }, 5000); }
 
     // ----------------------------------------------------
     // 通信・ロビー・ゲーム進行
@@ -876,7 +805,6 @@
             if (userCoins < 100) return showToast("コインが足りません！ (100G必要)", "#f44336");
             userCoins -= 100; saveUserData(); isOniMode = true;
         } else { isOniMode = false; }
-        oniModeFailed = false;
         
         isHost = true; myNetworkId = 0; ruleType = "KD"; MAX_ROUNDS = 5; currentRound = 1; isOfflineMode = true;
         players.forEach(p => { p.isActive = false; p.isReal = false; p.peerId = null; p.hand = []; p.drinks = 0; p.loseCount = 0; p.level = 1; });
@@ -949,9 +877,6 @@
         guestConnections.forEach(conn => conn.send({ type: 'GAME_START' })); switchScreen('game-container'); startRound();
     }
 
-    // ----------------------------------------------------
-    // ゲームロジック
-    // ----------------------------------------------------
     function createDeck() {
         deck = []; cardIdCounter = 0; suits.forEach(suit => { ranks.forEach((rank, index) => { deck.push({ id: cardIdCounter++, suit, rank, value: index + 1, type: 'normal' }); }); }); deck.push({ id: cardIdCounter++, suit: 'Joker', rank: '🃏', value: 0, type: 'joker' }, { id: cardIdCounter++, suit: 'Joker', rank: '🃏', value: 0, type: 'joker' });
         for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
@@ -965,7 +890,8 @@
             gameEnded = false; createDeck(); activePlayers = players.filter(p => p.isActive === true); activePlayers.forEach(p => p.hand = deck.splice(0, 5));
             let firstCard = deck.pop(); while (firstCard && firstCard.type === 'joker') { deck.unshift(firstCard); firstCard = deck.pop(); } discardSets = [ [firstCard] ]; selectedCards = [];
             let activeIds = activePlayers.map(p => p.id); if (currentRound === 1) currentTurn = activeIds[Math.floor(Math.random() * activeIds.length)]; else currentTurn = activeIds.includes(firstPlayer) ? firstPlayer : activeIds[0];
-            $('round-counter').textContent = `第 ${currentRound} / ${MAX_ROUNDS} ラウンド`; broadcastState(); updateUI(); setTurn(currentTurn);
+            $('round-counter').textContent = `第 ${currentRound} / ${MAX_ROUNDS} ラウンド`;
+            broadcastState(); updateUI(); setTurn(currentTurn);
             const firstPObj = players.find(p => p.id === currentTurn); if (firstPObj && !firstPObj.isReal) { setTimeout(() => processCPUTurn(currentTurn), 1200); }
         } catch (e) { console.error("Round Start Error: ", e); }
     }
@@ -1155,8 +1081,6 @@
             else if (ruleType === "CUSTOM") { scores.forEach(s => { if (customAllLose) { if (s.score > minScore) drinkChanges[s.id] = customLose; } else { if (s.score === maxScore) drinkChanges[s.id] = customLose; } }); }
         }
 
-        if (isOniMode && drinkChanges[myNetworkId] > 0) { oniModeFailed = true; }
-
         let resultsData = activePlayers.map(p => { 
             let s = scores.find(x => x.id === p.id).score;
             return { id: p.id, name: p.name, icon: p.icon, score: s, loseCount: p.loseCount, change: drinkChanges[p.id], lossChange: lossChanges[p.id], drinks: p.drinks, isDeclarer: p.id === declarerIndex, isMax: s === maxScore, level: p.level }; 
@@ -1181,7 +1105,8 @@
 
             resultsData.forEach((res, index) => {
                 let displayRank = index + 1; if (isAsaf && res.isDeclarer) displayRank = activePlayers.length; 
-                const tr = document.createElement('tr'); if (res.id === myNetworkId) tr.className = 'me-row'; else if (res.isDeclarer) tr.style.backgroundColor = "rgba(255,255,255,0.05)";
+                const tr = document.createElement('tr');
+                if (res.id === myNetworkId) tr.className = 'me-row'; else if (res.isDeclarer) tr.style.backgroundColor = "rgba(255,255,255,0.05)";
                 
                 let changeText = ""; let color = 'white';
                 if (isOfflineMode) { changeText = res.change > 0 ? `-${res.change}${unit}` : `±0`; color = res.change > 0 ? '#f44336' : 'white'; } 
@@ -1218,7 +1143,7 @@
             }
 
             let oldXp = userXp; userCoins += earnCoin; userXp += earnXp;
-            if (isOniMode && myRank === 1 && !oniModeFailed) oniTickets += 1;
+            if (isOniMode && myRank === 1) oniTickets += 1;
             saveUserData();
 
             const statType = isPvP ? 'pvp' : 'cpu';
@@ -1232,18 +1157,19 @@
             finalData.forEach((res, index) => {
                 if (index > 0 && res.drinks > finalData[index - 1].drinks) rank = index + 1;
                 const tr = document.createElement('tr'); if (res.id === myNetworkId) tr.className = 'me-row'; let totalText = isOfflineMode ? `${-res.drinks}${unit}` : `${res.drinks}${unit}`;
-                tr.innerHTML = `<td>${rank}位</td><td><span class="icon-small" style="width:20px; height:20px; vertical-align:middle; margin-right:4px;">${res.icon}</span> ${res.name}</td><td colspan="3" style="font-weight: bold; color: ${rank === 1 ? '#4caf50' : '#ffeb3b'}; font-size: 16px;">${totalText}</td>`; tbody.appendChild(tr);
+                tr.innerHTML = `<td>${rank}位</td><td><span class="icon-small" style="width:20px; height:20px; vertical-align:middle; margin-right:4px;">${res.icon}</span> ${res.name}</td><td colspan="3" style="font-weight: bold; color: ${rank === 1 ? '#4caf50' : '#ffeb3b'}; font-size: 16px;">${totalText}</td>`;
+                tbody.appendChild(tr);
             });
             
-            $('modal-btn-single').style.display = 'none'; $('modal-btn-double').style.display = 'none';
+            $('modal-btn-single').style.display = 'block'; $('modal-btn-double').style.display = 'none';
             $('modal-overlay').style.display = 'flex'; $('modal-xp-area').style.display = 'block';
             
-            $('modal-btn-double').style.display = 'flex';
+            $('modal-next-btn').textContent = "メインメニューへ戻る"; modalActionState = 'new_game';
             
             if(earnXp === 0) {
                 let info = calcLevel(Math.floor(userXp)); $('modal-lv').textContent = info.level; $('modal-next-xp').textContent = info.next - Math.floor(userXp);
                 let prog = ((userXp - info.base) / (info.next - info.base)) * 100; $('modal-xp-bar').style.width = prog + '%';
-                if (isOniMode && myRank === 1 && !oniModeFailed) { showToast(`🎉 鬼モード制覇！<br><span style="font-size:16px;">鬼ガチャチケット獲得！</span>`, "#ffeb3b"); }
+                if (isOniMode && myRank === 1) { showToast(`🎉 鬼モード制覇！<br><span style="font-size:16px;">鬼ガチャチケット獲得！</span>`, "#ffeb3b"); }
                 else if (earnCoin > 0) { showToast(`🎉 最終結果 ${myRank}位！<br><span style="font-size:20px;">+${earnCoin} G</span>`, "#ffeb3b"); }
             } else {
                 let currentAnimXp = oldXp; let lvFlag = calcLevel(oldXp).level; $('modal-lv').className = ""; 
@@ -1253,7 +1179,7 @@
                     currentAnimXp += (earnXp / 30) || 1; 
                     if(currentAnimXp >= userXp) {
                         currentAnimXp = userXp; clearInterval(xpAnimInterval);
-                        if (isOniMode && myRank === 1 && !oniModeFailed) { showToast(`🎉 鬼モード制覇！<br><span style="font-size:16px;">+${earnCoin}G / +${earnXp}xp / 鬼チケット獲得！</span>`, "#ffeb3b"); }
+                        if (isOniMode && myRank === 1) { showToast(`🎉 鬼モード制覇！<br><span style="font-size:16px;">+${earnCoin}G / +${earnXp}xp / 鬼チケット獲得！</span>`, "#ffeb3b"); }
                         else if (earnCoin > 0) { showToast(`🎉 最終結果 ${myRank}位！<br><span style="font-size:20px;">+${earnCoin} G / +${earnXp} xp</span>`, "#ffeb3b"); }
                     }
                     let info = calcLevel(Math.floor(currentAnimXp)); $('modal-lv').textContent = info.level; $('modal-next-xp').textContent = info.next - Math.floor(currentAnimXp);
@@ -1264,10 +1190,16 @@
         } catch(e) { console.error("showFinalTotalRanking error:", e); alert("最終結果の表示中にエラーが発生しました。"); leaveRoom(); }
     }
 
+    function returnToLobby() {
+        $('modal-overlay').style.display = 'none';
+        if (isHost) { guestConnections.forEach(c => c.send({ type: 'RETURN_LOBBY' })); players.forEach(p => { p.hand = []; p.drinks = 0; p.loseCount = 0; }); gameEnded = true; switchScreen('room-waiting-screen'); updateLobbyUI(); } 
+        else { if(hostConnection) { gameEnded = true; switchScreen('room-waiting-screen'); } else { leaveRoom(); } }
+    }
+
     function handleModalNext() { 
         $('modal-overlay').style.display = 'none'; 
         if (modalActionState === 'next_round') { gameEnded = false; selectedCards = []; updateUI(false); $('turn-indicator').textContent = "次のラウンドを準備中..."; if (isHost) { currentRound++; startRound(); } } 
-        else if (modalActionState === 'show_final') { setTimeout(showFinalTotalRanking, 150); } 
+        else if (modalActionState === 'show_final') { setTimeout(showFinalTotalRanking, 150); } else if (modalActionState === 'new_game') { leaveRoom(); } 
     }
 
     let audioCtx = null; function initAudio() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
