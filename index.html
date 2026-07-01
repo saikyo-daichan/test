@@ -715,13 +715,15 @@
         'none': 'なし',
         'item_diamond': 'ダイヤモンド 💎',
         'item_crown': '王冠 👑',
-        'item_crown_anim': '動く王冠 👑'
+        'item_crown_anim': '動く王冠 👑',
+        'item_joker': 'ジョーカー 🃏'
     };
 
     function getIconItemEmoji(id) {
         if(id === 'item_diamond') return '💎';
         if(id === 'item_crown') return '👑';
         if(id === 'item_crown_anim') return '<span class="anim-crown">👑</span>';
+        if(id === 'item_joker') return '🃏';
         return '';
     }
 
@@ -1129,6 +1131,16 @@
                 localStorage.setItem('yaniv_unlocked_icon_items', JSON.stringify(unlockedIconItems));
                 refreshIconItemSelect();
                 showToast("アイコンアイテム「王冠 👑」を獲得しました！", "#ffeb3b");
+                playSound('yaniv');
+            } else {
+                showToast("すでに獲得済みです！", "#ffeb3b");
+            }
+        } else if (code === "e51jJ8HUFB") {
+            if (!unlockedIconItems.includes("item_joker")) {
+                unlockedIconItems.push("item_joker");
+                localStorage.setItem('yaniv_unlocked_icon_items', JSON.stringify(unlockedIconItems));
+                refreshIconItemSelect();
+                showToast("アイコンアイテム「🃏」を獲得しました！", "#ffeb3b");
                 playSound('yaniv');
             } else {
                 showToast("すでに獲得済みです！", "#ffeb3b");
@@ -1694,7 +1706,7 @@
     }
 
     function setupOfflineLobby(mode) {
-        isChaosMode = false; // オフライン時は確実にカオスモードを無効化
+        isChaosMode = false;
         
         if (mode === 'hiroto') {
             if (userCoins < 100) return showToast("コインが足りません！ (100G必要)", "#f44336");
@@ -2347,6 +2359,7 @@
                 modalActionState = 'new_game';
             } else {
                 documentById('modal-btn-double').style.display = 'flex';
+                // 既存のイベントを再セット
                 const leftBtn = documentById('modal-btn-double').children[0];
                 const rightBtn = documentById('modal-btn-double').children[1];
                 leftBtn.setAttribute('onclick', 'returnToLobby()');
