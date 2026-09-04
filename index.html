@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>本格クラロワ風 RTSゲーム</title>
+    <title>本格クラロワ風 RTSゲーム 完全版</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: none; /* スマホの不要なスクロールを防止 */ }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: none; }
         body { background-color: #111; color: #fff; font-family: 'Courier New', Courier, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
         
-        /* 画面サイズに合わせてアスペクト比を維持（スマホ完全対応） */
-        #game-container { position: relative; width: 100vw; height: calc(100vw * 7 / 4); max-height: 100vh; max-width: calc(100vh * 4 / 7); background: #4caf50; border: 2px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
+        #game-container { position: relative; width: 100vw; height: calc(100vw * 7 / 4); max-height: 100vh; max-width: calc(100vh * 4 / 7); background: #689f38; border: 2px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; display: none; }
         canvas { display: block; width: 100%; height: 100%; }
         
         #ui-layer { position: absolute; bottom: 0; width: 100%; height: 22%; background: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; z-index: 10; border-top: 2px solid #555; }
@@ -23,42 +22,47 @@
         .card.disabled { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
         
         .card-cost { position: absolute; top: -8px; left: -8px; background: #e91e63; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid #fff; z-index: 2;}
-        .card-emoji { font-size: 28px; margin-bottom: 2px; }
-        .card-name { font-size: 10px; text-align: center; line-height: 1.1; word-break: keep-all; }
+        .card-emoji { font-size: 26px; margin-bottom: 2px; }
+        .card-name { font-size: 9px; text-align: center; line-height: 1.1; word-break: keep-all; }
         
-        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        button { padding: 15px 30px; font-size: 20px; cursor: pointer; background: #4caf50; color: #fff; border: 2px solid #fff; border-radius: 8px; margin-top: 20px; font-weight: bold; font-family: inherit; box-shadow: 0 4px 0 #2e7d32; transition: all 0.1s; }
-        button:active { transform: translateY(4px); box-shadow: none; }
+        /* デッキ構築画面 */
+        #deck-builder { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #222; display: flex; flex-direction: column; align-items: center; padding: 20px; z-index: 200; overflow-y: auto; }
+        #deck-builder h1 { color: #ffeb3b; font-size: 20px; text-align: center; margin-bottom: 10px; }
+        #deck-status { margin-bottom: 15px; font-size: 14px; color: #aaa; }
+        #all-cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 400px; margin-bottom: 20px; }
+        .deck-card { aspect-ratio: 3/4; background: #ddd; border: 3px solid transparent; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #000; position: relative; }
+        .deck-card.selected { border-color: #4caf50; background: #c8e6c9; }
+        
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; display: none; }
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #4caf50; color: #fff; border: 2px solid #fff; border-radius: 8px; font-weight: bold; transition: all 0.1s; }
+        button:disabled { background: #555; cursor: not-allowed; border-color: #777; color: #888; }
+        button:active:not(:disabled) { transform: translateY(4px); }
     </style>
 </head>
 <body>
 
+<!-- デッキ構築画面 -->
+<div id="deck-builder">
+    <h1>デッキ構築</h1>
+    <div id="deck-status">選択中: <span id="deck-count" style="color:#fff; font-weight:bold;">0</span> / 8枚</div>
+    <div id="all-cards-grid"></div>
+    <button id="start-btn" disabled>GAME START</button>
+</div>
+
+<!-- ゲーム画面 -->
 <div id="game-container">
     <canvas id="gameCanvas" width="400" height="700"></canvas>
-    
     <div id="ui-layer">
-        <div id="elixir-bar-container">
-            <div id="elixir-bar"></div>
-            <div id="elixir-text">0 / 10</div>
-        </div>
-        <div id="cards-container">
-            <!-- Cards will be injected here via JS -->
-        </div>
+        <div id="elixir-bar-container"><div id="elixir-bar"></div><div id="elixir-text">0 / 10</div></div>
+        <div id="cards-container"></div>
     </div>
-
-    <div id="overlay">
-        <h1 style="color:#ffeb3b; text-align:center; text-shadow: 2px 2px 0 #000;">タワーディフェンス<br>プロトタイプ</h1>
-        <p style="margin-top:20px; font-size:14px; text-align:center; line-height:1.6;">カードをドラッグ＆ドロップして<br>味方を召喚しよう！</p>
-        <button id="start-btn">GAME START</button>
-    </div>
+    <div id="overlay"></div>
 </div>
 
 <script>
-/**
- * -------------------------------------------------------------
- * 1. 数学・ユーティリティエンジン (Vector Math & Utils)
- * -------------------------------------------------------------
- */
+/** -------------------------------------------------------------
+ * 1. 数学・ユーティリティ・サウンド
+ * ------------------------------------------------------------- */
 class Vec2 {
     constructor(x, y) { this.x = x; this.y = y; }
     add(v) { return new Vec2(this.x + v.x, this.y + v.y); }
@@ -68,56 +72,64 @@ class Vec2 {
     normalize() { let m = this.mag(); return m === 0 ? new Vec2(0, 0) : new Vec2(this.x / m, this.y / m); }
     dist(v) { return this.sub(v).mag(); }
 }
+const Utils = { randomRange: (min, max) => Math.random() * (max - min) + min };
 
-const Utils = {
-    randomRange: (min, max) => Math.random() * (max - min) + min,
-    randomInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
-};
-
-/**
- * -------------------------------------------------------------
- * 2. サウンドエンジン (Web Audio API)
- * -------------------------------------------------------------
- */
 class SoundEngine {
-    constructor() {
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        this.enabled = false;
-    }
+    constructor() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.enabled = false; }
     init() { if(this.ctx.state === 'suspended') this.ctx.resume(); this.enabled = true; }
-    playTone(freq, type, duration, vol=0.1) {
+    playTone(freq, type, dur, vol=0.1) {
         if(!this.enabled) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
         gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + dur);
         osc.connect(gain); gain.connect(this.ctx.destination);
-        osc.start(); osc.stop(this.ctx.currentTime + duration);
+        osc.start(); osc.stop(this.ctx.currentTime + dur);
     }
     playSpawn() { this.playTone(440, 'square', 0.1, 0.05); setTimeout(() => this.playTone(660, 'square', 0.15, 0.05), 100); }
-    playAttackMelee() { this.playTone(150, 'sawtooth', 0.1, 0.08); }
-    playAttackRange() { this.playTone(800, 'sine', 0.1, 0.05); }
+    playSpell() { this.playTone(200, 'sawtooth', 0.5, 0.15); setTimeout(() => this.playTone(100, 'square', 0.8, 0.2), 100); }
     playHit() { this.playTone(100, 'square', 0.1, 0.1); }
-    playTowerDestroy() { this.playTone(50, 'sawtooth', 0.5, 0.2); setTimeout(() => this.playTone(40, 'sawtooth', 0.8, 0.2), 200); }
-    playElixirMax() { this.playTone(1200, 'sine', 0.2, 0.05); }
 }
 const audio = new SoundEngine();
 
-/**
- * -------------------------------------------------------------
- * 3. エンティティシステム (Unit, Tower with Emojis)
- * -------------------------------------------------------------
- */
+/** -------------------------------------------------------------
+ * 2. カードデータベース & トークン定義
+ * ------------------------------------------------------------- */
+// 属性: type (UNIT/SPELL/BUILDING), targetType (GROUND/ALL/BUILDING)
+const CardDB = [
+    { id: 'knight', name: 'ナイト', emoji: '⚔️', cost: 3, type: 'UNIT', hp: 800, damage: 80, speed: 50, range: 20, atkCooldown: 1.2, sightRange: 150, targetType: 'GROUND', isFlying: false, radius: 14, count: 1 },
+    { id: 'archer', name: 'アーチャー', emoji: '🏹', cost: 3, type: 'UNIT', hp: 300, damage: 60, speed: 50, range: 120, atkCooldown: 1.0, sightRange: 200, targetType: 'ALL', isFlying: false, radius: 10, count: 2 },
+    { id: 'giant', name: 'ジャイアント', emoji: '👹', cost: 5, type: 'UNIT', hp: 2000, damage: 120, speed: 30, range: 25, atkCooldown: 2.0, sightRange: 400, targetType: 'BUILDING', isFlying: false, radius: 20, count: 1 },
+    { id: 'goblin', name: 'ゴブリン', emoji: '🗡️', cost: 2, type: 'UNIT', hp: 200, damage: 50, speed: 80, range: 15, atkCooldown: 0.8, sightRange: 150, targetType: 'GROUND', isFlying: false, radius: 9, count: 3 },
+    { id: 'minions', name: 'ガーゴイル', emoji: '🦇', cost: 3, type: 'UNIT', hp: 200, damage: 45, speed: 70, range: 20, atkCooldown: 1.0, sightRange: 150, targetType: 'ALL', isFlying: true, radius: 10, count: 3 },
+    
+    // 呪文
+    { id: 'zap', name: 'ザップ', emoji: '⚡', cost: 2, type: 'SPELL', damage: 100, radius: 50, effectColor: '#ffff00' },
+    { id: 'fireball', name: 'ファイアボール', emoji: '🔥', cost: 4, type: 'SPELL', damage: 300, radius: 80, effectColor: '#ff5722' },
+    
+    // 建物（スポナー）
+    { id: 'tombstone', name: '墓石', emoji: '🪦', cost: 3, type: 'BUILDING', hp: 400, lifetime: 30, spawnInterval: 3.0, spawnToken: 'skeleton', radius: 18 },
+    { id: 'goblinhut', name: 'ゴブリン小屋', emoji: '🛖', cost: 5, type: 'BUILDING', hp: 700, lifetime: 40, spawnInterval: 4.5, spawnToken: 'speargoblin', radius: 20 },
+    { id: 'oven', name: 'オーブン', emoji: '🍳', cost: 4, type: 'BUILDING', hp: 600, lifetime: 35, spawnInterval: 5.0, spawnToken: 'firespirit', radius: 18 }
+];
+
+// スポナーから出るトークン(カードではないユニット)
+const Tokens = {
+    skeleton: { name: 'スケルトン', emoji: '💀', hp: 80, damage: 30, speed: 60, range: 15, atkCooldown: 1.0, sightRange: 150, targetType: 'GROUND', isFlying: false, radius: 8 },
+    speargoblin: { name: '槍ゴブリン', emoji: '👺', hp: 150, damage: 40, speed: 70, range: 120, atkCooldown: 1.3, sightRange: 200, targetType: 'ALL', isFlying: false, radius: 9 },
+    firespirit: { name: 'ファイヤ', emoji: '🔥', hp: 100, damage: 150, speed: 80, range: 20, atkCooldown: 0.5, sightRange: 200, targetType: 'ALL', isFlying: false, radius: 8, isKamikaze: true } // 特攻
+};
+
+/** -------------------------------------------------------------
+ * 3. エンティティシステム
+ * ------------------------------------------------------------- */
 class GameObject {
     constructor(x, y, team) {
         this.pos = new Vec2(x, y);
         this.team = team;
-        this.hp = 100;
-        this.maxHp = 100;
-        this.radius = 15;
         this.active = true;
+        this.isBuilding = false;
+        this.isFlying = false;
     }
     takeDamage(amount) {
         this.hp -= amount;
@@ -129,10 +141,11 @@ class Tower extends GameObject {
     constructor(x, y, team, isKing) {
         super(x, y, team);
         this.isKing = isKing;
+        this.isBuilding = true;
         this.radius = isKing ? 30 : 25;
         this.maxHp = isKing ? 2500 : 1500;
         this.hp = this.maxHp;
-        this.range = 150;
+        this.range = 160;
         this.damage = isKing ? 50 : 70;
         this.atkCooldown = 1.0;
         this.atkTimer = 0;
@@ -146,8 +159,7 @@ class Tower extends GameObject {
             let target = this.findTarget(game.units);
             if (target) {
                 target.takeDamage(this.damage);
-                audio.playAttackRange();
-                game.particles.addProjectile(this.pos, target, this.team);
+                game.particles.addProjectile(this.pos, target, this.team, '#fff');
                 this.atkTimer = this.atkCooldown;
             }
         }
@@ -163,140 +175,216 @@ class Tower extends GameObject {
         return closest;
     }
     draw(ctx) {
-        // 土台
         ctx.fillStyle = this.team === 0 ? '#1e88e5' : '#e53935';
-        ctx.beginPath();
-        ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 絵文字描画
-        ctx.font = `${this.radius * 1.2}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+        ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.font = `${this.radius * 1.2}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(this.emoji, this.pos.x, this.pos.y);
-        
-        // HPバー
-        const hpRatio = this.hp / this.maxHp;
-        ctx.fillStyle = 'red';
-        ctx.fillRect(this.pos.x - this.radius, this.pos.y - this.radius - 12, this.radius*2, 5);
-        ctx.fillStyle = '#4caf50';
-        ctx.fillRect(this.pos.x - this.radius, this.pos.y - this.radius - 12, this.radius*2 * hpRatio, 5);
+        this.drawHpBar(ctx);
+    }
+    drawHpBar(ctx) {
+        const r = this.hp / this.maxHp;
+        ctx.fillStyle = 'red'; ctx.fillRect(this.pos.x - this.radius, this.pos.y - this.radius - 12, this.radius*2, 5);
+        ctx.fillStyle = '#4caf50'; ctx.fillRect(this.pos.x - this.radius, this.pos.y - this.radius - 12, this.radius*2 * r, 5);
     }
 }
 
 class Unit extends GameObject {
     constructor(x, y, team, typeData) {
         super(x, y, team);
-        this.type = typeData.name;
         this.emoji = typeData.emoji;
         this.maxHp = typeData.hp;
         this.hp = this.maxHp;
-        this.damage = typeData.damage;
-        this.speed = typeData.speed;
-        this.range = typeData.range;
-        this.atkCooldown = typeData.atkCooldown;
         this.radius = typeData.radius;
-        this.color = typeData.color;
-        this.isRanged = typeData.range > 30;
+        this.isBuilding = typeData.type === 'BUILDING';
         
-        this.atkTimer = 0;
-        this.target = null;
-        this.state = 'MOVE';
+        // 建物専用プロパティ
+        if (this.isBuilding) {
+            this.lifetime = typeData.lifetime;
+            this.lifeTimer = typeData.lifetime;
+            this.spawnInterval = typeData.spawnInterval;
+            this.spawnTimer = 1.0;
+            this.spawnToken = typeData.spawnToken;
+        } else {
+            // ユニット専用プロパティ
+            this.damage = typeData.damage;
+            this.speed = typeData.speed;
+            this.range = typeData.range;
+            this.atkCooldown = typeData.atkCooldown;
+            this.sightRange = typeData.sightRange;
+            this.targetType = typeData.targetType; // GROUND, ALL, BUILDING
+            this.isFlying = typeData.isFlying;
+            this.isKamikaze = typeData.isKamikaze || false;
+            
+            this.atkTimer = 0;
+            this.searchTimer = 0;
+            this.target = null;
+            this.state = 'MOVE';
+        }
     }
+
     update(dt, game) {
+        if (this.isBuilding) {
+            this.updateBuilding(dt, game);
+        } else {
+            this.updateUnit(dt, game);
+        }
+    }
+
+    updateBuilding(dt, game) {
+        this.lifeTimer -= dt;
+        this.hp = this.maxHp * (this.lifeTimer / this.lifetime);
+        if (this.hp <= 0) { this.active = false; return; }
+
+        this.spawnTimer -= dt;
+        if (this.spawnTimer <= 0) {
+            let offset = new Vec2((Math.random()-0.5)*20, (this.team===0 ? -20 : 20));
+            game.spawnUnit(this.pos.x + offset.x, this.pos.y + offset.y, this.team, Tokens[this.spawnToken]);
+            this.spawnTimer = this.spawnInterval;
+        }
+    }
+
+    updateUnit(dt, game) {
         this.atkTimer -= dt;
-        if (!this.target || !this.target.active) {
-            this.target = this.findClosestEnemy(game);
+        this.searchTimer -= dt;
+
+        // ターゲット再評価 (0.5秒に1回、より近い敵や正しいタゲに切り替え)
+        if (!this.target || !this.target.active || this.searchTimer <= 0) {
+            this.target = this.findEnemy(game);
+            this.searchTimer = 0.5;
             this.state = 'MOVE';
         }
 
         if (this.target) {
             let dist = this.pos.dist(this.target.pos);
-            if (dist <= this.range) {
+            if (dist <= this.range + this.target.radius) {
                 this.state = 'ATTACK';
                 if (this.atkTimer <= 0) {
                     this.target.takeDamage(this.damage);
-                    if(this.isRanged) {
-                        audio.playAttackRange();
-                        game.particles.addProjectile(this.pos, this.target, this.team);
-                    } else {
-                        audio.playAttackMelee();
-                        audio.playHit();
-                    }
+                    if (this.range > 30) game.particles.addProjectile(this.pos, this.target, this.team, '#aaa');
+                    else audio.playHit();
+                    
+                    if (this.isKamikaze) this.takeDamage(this.maxHp); // 自爆
                     this.atkTimer = this.atkCooldown;
                 }
             } else {
                 this.state = 'MOVE';
-                let dir = this.target.pos.sub(this.pos).normalize();
-                
-                let separation = new Vec2(0,0);
-                for(let other of game.units) {
-                    if(other !== this && other.active) {
-                        let d = this.pos.dist(other.pos);
-                        if(d < this.radius + other.radius) {
-                            separation = separation.add(this.pos.sub(other.pos).normalize().mult(0.5));
-                        }
-                    }
-                }
-                dir = dir.add(separation).normalize();
-                this.pos = this.pos.add(dir.mult(this.speed * dt));
+                this.moveTowardsTarget(dt, game);
             }
         } else {
-             let moveDir = this.team === 0 ? -1 : 1;
-             this.pos.y += moveDir * this.speed * dt;
+            // ターゲットが一切見つからない場合は前進
+            this.pos.y += (this.team === 0 ? -1 : 1) * this.speed * dt;
         }
     }
-    findClosestEnemy(game) {
-        let closest = null, minDist = Infinity;
+
+    moveTowardsTarget(dt, game) {
+        let targetPos = this.target.pos;
+
+        // 川と橋のロジック (陸ユニットのみ)
+        if (!this.isFlying && !this.isBuilding) {
+            const RIVER_Y = game.height / 2;
+            const BRIDGE_L = 80, BRIDGE_R = game.width - 80;
+            
+            // 自分が自陣、ターゲットが敵陣（またはその逆）の場合、橋を目指す
+            if ((this.pos.y > RIVER_Y && targetPos.y < RIVER_Y) || (this.pos.y < RIVER_Y && targetPos.y > RIVER_Y)) {
+                let targetBridgeX = (this.pos.x < game.width/2) ? BRIDGE_L : BRIDGE_R;
+                // 橋のY座標付近（川の少し手前）までは橋に向かう
+                let bridgeY = (this.team === 0) ? RIVER_Y + 10 : RIVER_Y - 10;
+                
+                if (Math.abs(this.pos.y - RIVER_Y) > 20) {
+                    targetPos = new Vec2(targetBridgeX, bridgeY);
+                }
+            }
+        }
+
+        let dir = targetPos.sub(this.pos).normalize();
+
+        // ユニット同士の衝突回避 (Separation)
+        let separation = new Vec2(0,0);
+        for(let other of game.units) {
+            if(other !== this && other.active && !other.isBuilding && other.isFlying === this.isFlying) {
+                let d = this.pos.dist(other.pos);
+                if(d < this.radius + other.radius) {
+                    separation = separation.add(this.pos.sub(other.pos).normalize().mult(0.5));
+                }
+            }
+        }
+        dir = dir.add(separation).normalize();
+        this.pos = this.pos.add(dir.mult(this.speed * dt));
+    }
+
+    canAttack(enemy) {
+        if (this.targetType === 'BUILDING' && !enemy.isBuilding) return false;
+        if (this.targetType === 'GROUND' && enemy.isFlying) return false;
+        return true;
+    }
+
+    findEnemy(game) {
+        let closest = null, minDist = this.sightRange;
         let enemies = [].concat(game.units, game.towers).filter(e => e.team !== this.team && e.active);
+        
+        // 建物優先ターゲットのフィルタ
+        if (this.targetType === 'BUILDING') {
+            enemies = enemies.filter(e => e.isBuilding);
+        }
+
         for (let e of enemies) {
+            if (!this.canAttack(e)) continue;
             let d = this.pos.dist(e.pos);
+            // レーン判定の簡略化：X座標の差が大きすぎる（逆レーン）場合は視界範囲外とする
             if (d < minDist) { minDist = d; closest = e; }
+        }
+
+        // 視界内に敵がいない場合は、最も近いタワー/建物を最終目的地とする
+        if (!closest) {
+            let buildings = [].concat(game.towers, game.units.filter(u => u.isBuilding)).filter(e => e.team !== this.team && e.active);
+            let bMinDist = Infinity;
+            for (let b of buildings) {
+                let d = this.pos.dist(b.pos);
+                if (d < bMinDist) { bMinDist = d; closest = b; }
+            }
         }
         return closest;
     }
+
     draw(ctx) {
-        // 背景カラー
-        ctx.fillStyle = this.team === 0 ? this.color : '#e57373';
+        // 飛行ユニットの影
+        if (this.isFlying) {
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y + 15, this.radius*0.8, 0, Math.PI*2); ctx.fill();
+        }
+
+        ctx.fillStyle = this.team === 0 ? (this.isBuilding ? '#795548' : '#64b5f6') : '#e57373';
         ctx.beginPath();
-        ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+        if (this.isBuilding) {
+            ctx.rect(this.pos.x - this.radius, this.pos.y - this.radius, this.radius*2, this.radius*2);
+        } else {
+            ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+        }
         ctx.fill();
-        ctx.strokeStyle = this.team === 0 ? '#1565c0' : '#b71c1c';
-        ctx.lineWidth = 2;
-        ctx.stroke();
 
-        // 絵文字描画
-        ctx.font = `${this.radius * 1.2}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(this.emoji, this.pos.x, this.pos.y);
+        ctx.font = `${this.radius * 1.3}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(this.emoji, this.pos.x, this.pos.y - (this.isFlying ? 5 : 0));
 
-        // 攻撃モーション（白枠点滅）
         if(this.state === 'ATTACK' && this.atkTimer > this.atkCooldown - 0.2) {
-            ctx.beginPath();
-            ctx.arc(this.pos.x, this.pos.y, this.radius + 3, 0, Math.PI * 2);
-            ctx.strokeStyle = '#fff';
-            ctx.stroke();
+            ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius + 3, 0, Math.PI * 2);
+            ctx.strokeStyle = '#fff'; ctx.stroke();
         }
 
         // HPバー
-        const hpRatio = this.hp / this.maxHp;
-        ctx.fillStyle = 'red';
-        ctx.fillRect(this.pos.x - 10, this.pos.y - this.radius - 6, 20, 3);
-        ctx.fillStyle = '#00e676';
-        ctx.fillRect(this.pos.x - 10, this.pos.y - this.radius - 6, 20 * hpRatio, 3);
+        const r = this.hp / this.maxHp;
+        ctx.fillStyle = 'red'; ctx.fillRect(this.pos.x - 10, this.pos.y - this.radius - 8, 20, 3);
+        ctx.fillStyle = this.isBuilding ? '#ff9800' : '#00e676'; 
+        ctx.fillRect(this.pos.x - 10, this.pos.y - this.radius - 8, 20 * r, 3);
     }
 }
 
-/**
- * -------------------------------------------------------------
- * 4. パーティクル (飛び道具)
- * -------------------------------------------------------------
- */
 class ParticleSystem {
-    constructor() { this.projectiles = []; }
-    addProjectile(start, target, team) {
-        this.projectiles.push({ pos: new Vec2(start.x, start.y), target: target, speed: 400, team: team, active: true });
+    constructor() { this.projectiles = []; this.effects = []; }
+    addProjectile(start, target, team, color) {
+        this.projectiles.push({ pos: new Vec2(start.x, start.y), target: target, speed: 400, color: color, active: true });
+    }
+    addSpellEffect(pos, radius, color) {
+        this.effects.push({ pos: new Vec2(pos.x, pos.y), radius: radius, color: color, life: 0.3, maxLife: 0.3, active: true });
     }
     update(dt) {
         for(let p of this.projectiles) {
@@ -306,39 +394,43 @@ class ParticleSystem {
             if(p.pos.dist(p.target.pos) < 10) { p.active = false; audio.playHit(); }
         }
         this.projectiles = this.projectiles.filter(p => p.active);
+
+        for(let e of this.effects) {
+            e.life -= dt;
+            if(e.life <= 0) e.active = false;
+        }
+        this.effects = this.effects.filter(e => e.active);
     }
     draw(ctx) {
         for(let p of this.projectiles) {
-            ctx.fillStyle = p.team === 0 ? '#bbdefb' : '#ffcdd2';
-            ctx.beginPath(); ctx.arc(p.pos.x, p.pos.y, 4, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.pos.x, p.pos.y, 4, 0, Math.PI*2); ctx.fill();
+        }
+        for(let e of this.effects) {
+            ctx.fillStyle = e.color;
+            ctx.globalAlpha = e.life / e.maxLife * 0.7;
+            ctx.beginPath(); ctx.arc(e.pos.x, e.pos.y, e.radius, 0, Math.PI*2); ctx.fill();
+            ctx.globalAlpha = 1.0;
         }
     }
 }
 
-/**
- * -------------------------------------------------------------
- * 5. カードデッキシステム (絵文字追加)
- * -------------------------------------------------------------
- */
-const CardDB = [
-    { id: 'knight', name: 'ナイト', emoji: '⚔️', cost: 3, hp: 800, damage: 80, speed: 60, range: 20, atkCooldown: 1.2, radius: 14, color: '#90caf9', count: 1 },
-    { id: 'archer', name: 'アーチャー', emoji: '🏹', cost: 3, hp: 300, damage: 60, speed: 60, range: 120, atkCooldown: 1.0, radius: 12, color: '#a5d6a7', count: 2 },
-    { id: 'giant', name: 'ジャイアント', emoji: '👹', cost: 5, hp: 2000, damage: 120, speed: 40, range: 25, atkCooldown: 2.0, radius: 20, color: '#ffcc80', count: 1 },
-    { id: 'goblin', name: 'ゴブリン', emoji: '🗡️', cost: 2, hp: 200, damage: 50, speed: 90, range: 15, atkCooldown: 0.8, radius: 10, color: '#81c784', count: 3 }
-];
-
+/** -------------------------------------------------------------
+ * 4. プレイヤーとCPU AI
+ * ------------------------------------------------------------- */
 class Player {
-    constructor(isCPU = false) {
+    constructor(deckData, isCPU = false) {
         this.isCPU = isCPU;
         this.elixir = 5;
         this.maxElixir = 10;
-        this.elixirRate = 1.0; 
         
-        this.deck = [...CardDB, ...CardDB]; 
+        // デッキのシャッフル
+        this.deck = [];
+        deckData.forEach(d => this.deck.push({...d}));
         this.shuffleDeck();
+        
         this.hand = [];
         for(let i=0; i<4; i++) this.hand.push(this.deck.pop());
-        this.drawCardToNext();
+        this.nextCard = this.deck.pop();
         this.cpuTimer = 0;
     }
     shuffleDeck() {
@@ -347,11 +439,9 @@ class Player {
             [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
         }
     }
-    drawCardToNext() {
-        if(this.deck.length === 0) {
-            this.deck = [...CardDB, ...CardDB];
-            this.shuffleDeck();
-        }
+    drawCardToNext(usedCard) {
+        // 使ったカードを山札の底に戻して無限ループ化 (クラロワ仕様)
+        this.deck.unshift(usedCard);
         this.nextCard = this.deck.pop();
     }
     useCard(index) {
@@ -360,31 +450,34 @@ class Player {
             this.elixir -= card.cost;
             this.hand.splice(index, 1);
             this.hand.push(this.nextCard);
-            this.drawCardToNext();
+            this.drawCardToNext(card);
             return card;
         }
         return null;
     }
     update(dt, game) {
-        if (this.elixir < this.maxElixir) {
-            this.elixir += this.elixirRate * dt;
-            if(this.elixir >= this.maxElixir && !this.isCPU && Math.floor(this.elixir - this.elixirRate * dt) < 10) {
-                audio.playElixirMax();
-            }
-        }
+        if (this.elixir < this.maxElixir) this.elixir += 1.0 * dt;
+        
+        // CPU AI 強化版
         if (this.isCPU) {
             this.cpuTimer += dt;
-            if (this.cpuTimer > 3.5) { 
-                let playableIdx = this.hand.findIndex(c => c.cost <= this.elixir);
-                if (playableIdx !== -1 && Math.random() > 0.3) {
-                    let card = this.useCard(playableIdx);
-                    let spawnX = Math.random() > 0.5 ? 100 : 300; 
-                    let spawnY = 150; 
-                    for(let i=0; i<card.count; i++) {
-                         let offset = new Vec2(Utils.randomRange(-15,15), Utils.randomRange(-15,15));
-                         game.spawnUnit(spawnX + offset.x, spawnY + offset.y, 1, card);
+            if (this.cpuTimer > 1.2) { // より高い頻度で思考
+                let playables = this.hand.map((c, i) => ({c, i})).filter(x => x.c.cost <= this.elixir);
+                // エリクサーが溢れそう、またはランダムでガツガツ攻める
+                if (playables.length > 0 && (this.elixir > 8 || Math.random() > 0.4)) {
+                    let pick = playables[Math.floor(Math.random() * playables.length)];
+                    let card = this.useCard(pick.i);
+                    
+                    let spawnX = Math.random() > 0.5 ? 80 : 320; 
+                    let spawnY = 150 + Math.random() * 80; // 敵陣のタワー付近〜橋の手前
+                    
+                    // スペルは自陣のタワーや敵ユニットの塊を狙う（今回は簡易的にプレイヤー陣地へ）
+                    if (card.type === 'SPELL') {
+                        spawnY = 550; // プレイヤーのタワー付近
+                        spawnX = Math.random() > 0.5 ? 80 : 320;
                     }
-                    audio.playSpawn();
+                    
+                    game.deployCard(card, new Vec2(spawnX, spawnY), 1);
                 }
                 this.cpuTimer = 0;
             }
@@ -392,26 +485,25 @@ class Player {
     }
 }
 
-/**
- * -------------------------------------------------------------
- * 6. メインエンジン (ドラッグ＆ドロップ対応)
- * -------------------------------------------------------------
- */
+/** -------------------------------------------------------------
+ * 5. ゲームエンジン (メイン)
+ * ------------------------------------------------------------- */
 class GameEngine {
-    constructor() {
+    constructor(playerDeck) {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.width = this.canvas.width;
-        this.height = this.canvas.height;
+        this.width = this.canvas.width; this.height = this.canvas.height;
         this.lastTime = performance.now();
-        this.state = 'START';
-        this.particles = new ParticleSystem();
-        this.towers = [];
-        this.units = [];
-        this.player = new Player(false);
-        this.enemy = new Player(true);
+        this.state = 'PLAY';
         
-        // Drag variables
+        this.particles = new ParticleSystem();
+        this.towers = []; this.units = [];
+        
+        // CPUは強そうなカードを固定で持つ
+        const cpuDeck = CardDB.slice(0, 8);
+        this.player = new Player(playerDeck, false);
+        this.enemy = new Player(cpuDeck, true);
+        
         this.draggingCardIndex = -1;
         this.draggingCard = null;
         this.dragEl = null;
@@ -442,50 +534,35 @@ class GameEngine {
         this.player.hand.forEach((card, idx) => {
             let div = document.createElement('div');
             div.className = `card ${this.player.elixir >= card.cost ? '' : 'disabled'}`;
-            div.innerHTML = `
-                <div class="card-cost">${card.cost}</div>
-                <div class="card-emoji">${card.emoji}</div>
-                <div class="card-name">${card.name}</div>
-            `;
+            div.innerHTML = `<div class="card-cost">${card.cost}</div><div class="card-emoji">${card.emoji}</div><div class="card-name">${card.name}</div>`;
             
-            // ドラッグ開始イベント
             const startDrag = (e) => {
                 if (this.player.elixir < card.cost || this.state !== 'PLAY') return;
                 e.preventDefault();
-                this.draggingCardIndex = idx;
-                this.draggingCard = card;
+                this.draggingCardIndex = idx; this.draggingCard = card;
                 
-                // 画面を追従するダミー要素を作成
                 this.dragEl = div.cloneNode(true);
-                this.dragEl.style.position = 'fixed';
-                this.dragEl.style.pointerEvents = 'none';
-                this.dragEl.style.zIndex = 1000;
-                this.dragEl.style.transform = 'scale(1.2)';
-                this.dragEl.style.opacity = '0.9';
+                this.dragEl.style.position = 'fixed'; this.dragEl.style.pointerEvents = 'none';
+                this.dragEl.style.zIndex = 1000; this.dragEl.style.transform = 'scale(1.2)';
                 document.body.appendChild(this.dragEl);
-                this.moveDragEvent(e); // 初期位置設定
+                this.moveDragEvent(e);
             };
-
             div.addEventListener('mousedown', startDrag);
             div.addEventListener('touchstart', startDrag, { passive: false });
             this.cardsContainer.appendChild(div);
         });
         
-        // NEXTカード表示
         let nextDiv = document.createElement('div');
         nextDiv.style = "width:12%; aspect-ratio:3/4; background:#555; border-radius:5px; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0.8; font-size:10px; color:#ccc;";
         nextDiv.innerHTML = `NEXT<div style="font-size:20px; margin-top:2px;">${this.player.nextCard.emoji}</div>`;
         this.cardsContainer.appendChild(nextDiv);
     }
 
-    // Canvas内部の座標に変換する関数 (レスポンシブ対応)
     getCanvasPos(clientX, clientY) {
         const rect = this.canvas.getBoundingClientRect();
-        const scaleX = this.canvas.width / rect.width;
-        const scaleY = this.canvas.height / rect.height;
         return {
-            x: (clientX - rect.left) * scaleX,
-            y: (clientY - rect.top) * scaleY
+            x: (clientX - rect.left) * (this.canvas.width / rect.width),
+            y: (clientY - rect.top) * (this.canvas.height / rect.height)
         };
     }
 
@@ -494,13 +571,9 @@ class GameEngine {
             if (!this.draggingCard) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            // ダミー要素を指の位置に移動 (カードの中心が指にくるように調整)
             const rect = this.dragEl.getBoundingClientRect();
             this.dragEl.style.left = (clientX - rect.width / 2) + 'px';
-            this.dragEl.style.top = (clientY - rect.height) + 'px'; // 指より少し上に表示して隠れないように
-            
-            // 盤面上の座標を計算し、プレビュー用に保存
+            this.dragEl.style.top = (clientY - rect.height) + 'px';
             this.previewPos = this.getCanvasPos(clientX, clientY);
         };
 
@@ -510,24 +583,18 @@ class GameEngine {
             const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
             const pos = this.getCanvasPos(clientX, clientY);
             
-            // 自陣（画面下半分）でかつCanvas内の場合のみ配置
-            if (pos.y >= this.height / 2 && pos.x >= 0 && pos.x <= this.width && pos.y <= this.height) {
+            // スペルはどこでもOK、それ以外は自陣のみ
+            let canDeploy = (pos.x >= 0 && pos.x <= this.width && pos.y >= 0 && pos.y <= this.height);
+            if (this.draggingCard.type !== 'SPELL' && pos.y < this.height / 2) canDeploy = false;
+
+            if (canDeploy) {
                 let card = this.player.useCard(this.draggingCardIndex);
-                if(card) {
-                    audio.playSpawn();
-                    for(let i=0; i<card.count; i++) {
-                        let offset = new Vec2(Utils.randomRange(-15,15), Utils.randomRange(-15,15));
-                        this.spawnUnit(pos.x + offset.x, pos.y + offset.y, 0, card);
-                    }
-                    this.renderHandUI();
-                }
+                if(card) this.deployCard(card, pos, 0);
+                this.renderHandUI();
             }
             
-            // ドラッグ終了処理
             if(this.dragEl) { this.dragEl.remove(); this.dragEl = null; }
-            this.draggingCard = null;
-            this.draggingCardIndex = -1;
-            this.previewPos = null;
+            this.draggingCard = null; this.draggingCardIndex = -1; this.previewPos = null;
         };
 
         document.addEventListener('mousemove', this.moveDragEvent);
@@ -536,19 +603,36 @@ class GameEngine {
         document.addEventListener('touchend', endDrag);
     }
 
+    deployCard(card, pos, team) {
+        if (card.type === 'SPELL') {
+            audio.playSpell();
+            this.particles.addSpellEffect(pos, card.radius, card.effectColor);
+            // 範囲ダメージ
+            [].concat(this.units, this.towers).forEach(u => {
+                if(u.team !== team && u.pos.dist(pos) <= card.radius) u.takeDamage(card.damage);
+            });
+            // タワー起動 (キングタワーにダメージが入った場合、activeAttackにするロジック)
+            this.towers.forEach(t => {
+                if(t.team !== team && t.isKing && t.hp < t.maxHp) t.activeAttack = true;
+            });
+        } else {
+            audio.playSpawn();
+            for(let i=0; i<(card.count||1); i++) {
+                let offset = new Vec2((Math.random()-0.5)*30, (Math.random()-0.5)*30);
+                this.spawnUnit(pos.x + offset.x, pos.y + offset.y, team, card);
+            }
+        }
+    }
+
     spawnUnit(x, y, team, typeData) { this.units.push(new Unit(x, y, team, typeData)); }
 
     update(dt) {
         if(this.state !== 'PLAY') return;
 
-        this.player.update(dt, this);
-        this.enemy.update(dt, this);
-        
-        // エリクサーUIの更新
-        document.getElementById('elixir-bar').style.width = `${(this.player.elixir / this.player.maxElixir) * 100}%`;
-        document.getElementById('elixir-text').innerText = `${Math.floor(this.player.elixir)} / ${this.player.maxElixir}`;
-        
-        if(!this.draggingCard) this.renderHandUI(); // ドラッグ中でなければUI更新（コストの色変え）
+        this.player.update(dt, this); this.enemy.update(dt, this);
+        document.getElementById('elixir-bar').style.width = `${(this.player.elixir / 10) * 100}%`;
+        document.getElementById('elixir-text').innerText = `${Math.floor(this.player.elixir)} / 10`;
+        if(!this.draggingCard) this.renderHandUI();
 
         this.towers.forEach(t => t.update(dt, this));
         this.units.forEach(u => u.update(dt, this));
@@ -556,8 +640,9 @@ class GameEngine {
 
         let towerCount = this.towers.length;
         this.towers = this.towers.filter(t => t.active);
+        // タワー破壊時、キングタワーをアクティブにする
         if(this.towers.length < towerCount) {
-             audio.playTowerDestroy();
+             this.towers.filter(t => t.isKing).forEach(k => k.activeAttack = true);
              this.checkWinCondition();
         }
         this.units = this.units.filter(u => u.active);
@@ -566,53 +651,40 @@ class GameEngine {
     checkWinCondition() {
         let pKing = this.towers.find(t => t.team === 0 && t.isKing);
         let eKing = this.towers.find(t => t.team === 1 && t.isKing);
-        if(!pKing) this.gameOver("LOSE...");
-        else if(!eKing) this.gameOver("WIN!!");
+        if(!pKing) this.gameOver("LOSE..."); else if(!eKing) this.gameOver("WIN!!");
     }
     
     gameOver(msg) {
         this.state = 'OVER';
         let overlay = document.getElementById('overlay');
         overlay.style.display = 'flex';
-        overlay.innerHTML = `<h1 style="color:#ffeb3b; font-size:40px; text-shadow:2px 2px 0 #000;">${msg}</h1><button onclick="location.reload()">RETRY</button>`;
+        overlay.innerHTML = `<h1 style="color:#ffeb3b; font-size:40px; text-shadow:2px 2px 0 #000;">${msg}</h1><button onclick="location.reload()" style="margin-top:20px;">RETRY</button>`;
     }
 
     draw() {
-        // フィールドと川
-        this.ctx.fillStyle = '#689f38'; // 草むら
-        this.ctx.fillRect(0, 0, this.width, this.height);
-        this.ctx.fillStyle = '#29b6f6'; // 川
-        this.ctx.fillRect(0, this.height/2 - 20, this.width, 40);
-        this.ctx.fillStyle = '#8d6e63'; // 橋
-        this.ctx.fillRect(60, this.height/2 - 20, 40, 40);
-        this.ctx.fillRect(this.width - 100, this.height/2 - 20, 40, 40);
+        this.ctx.fillStyle = '#689f38'; this.ctx.fillRect(0, 0, this.width, this.height);
+        this.ctx.fillStyle = '#29b6f6'; this.ctx.fillRect(0, this.height/2 - 20, this.width, 40); // 川
+        this.ctx.fillStyle = '#8d6e63'; this.ctx.fillRect(60, this.height/2 - 20, 40, 40); this.ctx.fillRect(this.width - 100, this.height/2 - 20, 40, 40); // 橋
 
-        // 自陣・敵陣の境界線ハイライト（ドラッグ中）
         if(this.draggingCard) {
             this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-            this.ctx.fillRect(0, this.height/2, this.width, this.height/2); // 自陣ハイライト
+            if(this.draggingCard.type !== 'SPELL') this.ctx.fillRect(0, this.height/2, this.width, this.height/2);
+            else this.ctx.fillRect(0, 0, this.width, this.height); // スペルは全域
         }
 
         this.towers.forEach(t => t.draw(this.ctx));
         this.units.forEach(u => u.draw(this.ctx));
         this.particles.draw(this.ctx);
         
-        // 配置プレビュー（ドラッグ中のカーソル位置）
         if(this.draggingCard && this.previewPos) {
             this.ctx.beginPath();
-            this.ctx.arc(this.previewPos.x, this.previewPos.y, this.draggingCard.radius, 0, Math.PI * 2);
-            // 自陣なら青枠、敵陣なら赤枠
-            this.ctx.strokeStyle = this.previewPos.y >= this.height/2 ? '#fff' : 'rgba(255, 0, 0, 0.8)';
-            this.ctx.lineWidth = 3;
-            this.ctx.setLineDash([5, 5]);
-            this.ctx.stroke();
-            this.ctx.setLineDash([]);
+            let r = this.draggingCard.type === 'SPELL' ? this.draggingCard.radius : this.draggingCard.radius;
+            this.ctx.arc(this.previewPos.x, this.previewPos.y, r, 0, Math.PI * 2);
+            let valid = this.draggingCard.type === 'SPELL' || this.previewPos.y >= this.height/2;
+            this.ctx.strokeStyle = valid ? '#fff' : 'rgba(255, 0, 0, 0.8)';
+            this.ctx.lineWidth = 3; this.ctx.setLineDash([5, 5]); this.ctx.stroke(); this.ctx.setLineDash([]);
             
-            // プレビュー絵文字
-            this.ctx.globalAlpha = 0.5;
-            this.ctx.font = `${this.draggingCard.radius * 1.5}px sans-serif`;
-            this.ctx.textAlign = "center";
-            this.ctx.textBaseline = "middle";
+            this.ctx.globalAlpha = 0.5; this.ctx.font = `24px sans-serif`; this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle";
             this.ctx.fillText(this.draggingCard.emoji, this.previewPos.x, this.previewPos.y);
             this.ctx.globalAlpha = 1.0;
         }
@@ -626,11 +698,41 @@ class GameEngine {
     }
 }
 
-document.getElementById('start-btn').addEventListener('click', () => {
+/** -------------------------------------------------------------
+ * 6. デッキ構築UIロジック
+ * ------------------------------------------------------------- */
+let selectedCards = [];
+const allCardsGrid = document.getElementById('all-cards-grid');
+const startBtn = document.getElementById('start-btn');
+const deckCountEl = document.getElementById('deck-count');
+
+CardDB.forEach(card => {
+    let div = document.createElement('div');
+    div.className = 'deck-card';
+    div.innerHTML = `<div class="card-cost" style="top:-5px;left:-5px;">${card.cost}</div><div style="font-size:30px;">${card.emoji}</div><div style="font-size:10px;text-align:center;margin-top:5px;">${card.name}</div>`;
+    
+    div.onclick = () => {
+        const idx = selectedCards.findIndex(c => c.id === card.id);
+        if (idx > -1) {
+            selectedCards.splice(idx, 1);
+            div.classList.remove('selected');
+        } else if (selectedCards.length < 8) {
+            selectedCards.push(card);
+            div.classList.add('selected');
+        }
+        
+        deckCountEl.innerText = selectedCards.length;
+        startBtn.disabled = selectedCards.length !== 8;
+    };
+    allCardsGrid.appendChild(div);
+});
+
+startBtn.addEventListener('click', () => {
     audio.init();
-    document.getElementById('overlay').style.display = 'none';
-    const game = new GameEngine();
-    game.state = 'PLAY';
+    document.getElementById('deck-builder').style.display = 'none';
+    document.getElementById('game-container').style.display = 'block';
+    
+    const game = new GameEngine(selectedCards);
     requestAnimationFrame((ts) => { game.lastTime = ts; game.loop(ts); });
 });
 </script>
