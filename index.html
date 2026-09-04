@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>本格クラロワ風 RTSゲーム 完全版</title>
+    <title>本格クラロワ風 RTSゲーム 完全版2</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: none; }
         body { background-color: #111; color: #fff; font-family: 'Courier New', Courier, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
@@ -26,17 +26,18 @@
         .card-name { font-size: 9px; text-align: center; line-height: 1.1; word-break: keep-all; }
         
         /* デッキ構築画面 */
-        #deck-builder { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #222; display: flex; flex-direction: column; align-items: center; padding: 20px; z-index: 200; overflow-y: auto; }
-        #deck-builder h1 { color: #ffeb3b; font-size: 20px; text-align: center; margin-bottom: 10px; }
-        #deck-status { margin-bottom: 15px; font-size: 14px; color: #aaa; }
-        #all-cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 400px; margin-bottom: 20px; }
+        #deck-builder { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #222; display: flex; flex-direction: column; align-items: center; padding: 20px; z-index: 200; overflow-y: auto; touch-action: auto; }
+        #deck-builder h1 { color: #ffeb3b; font-size: 20px; text-align: center; margin-bottom: 10px; flex-shrink: 0; }
+        #deck-status { margin-bottom: 15px; font-size: 14px; color: #aaa; flex-shrink: 0; }
+        #all-cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 400px; padding-bottom: 80px; }
         .deck-card { aspect-ratio: 3/4; background: #ddd; border: 3px solid transparent; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #000; position: relative; }
         .deck-card.selected { border-color: #4caf50; background: #c8e6c9; }
         
-        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; display: none; }
-        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #4caf50; color: #fff; border: 2px solid #fff; border-radius: 8px; font-weight: bold; transition: all 0.1s; }
-        button:disabled { background: #555; cursor: not-allowed; border-color: #777; color: #888; }
-        button:active:not(:disabled) { transform: translateY(4px); }
+        #start-btn { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 15px 30px; font-size: 18px; cursor: pointer; background: #4caf50; color: #fff; border: 2px solid #fff; border-radius: 8px; font-weight: bold; transition: all 0.1s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 210;}
+        #start-btn:disabled { background: #555; cursor: not-allowed; border-color: #777; color: #888; box-shadow: none; }
+        #start-btn:active:not(:disabled) { transform: translate(-50%, 4px); }
+        
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); flex-direction: column; align-items: center; justify-content: center; z-index: 100; display: none; }
     </style>
 </head>
 <body>
@@ -72,7 +73,6 @@ class Vec2 {
     normalize() { let m = this.mag(); return m === 0 ? new Vec2(0, 0) : new Vec2(this.x / m, this.y / m); }
     dist(v) { return this.sub(v).mag(); }
 }
-const Utils = { randomRange: (min, max) => Math.random() * (max - min) + min };
 
 class SoundEngine {
     constructor() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.enabled = false; }
@@ -93,64 +93,68 @@ class SoundEngine {
 const audio = new SoundEngine();
 
 /** -------------------------------------------------------------
- * 2. カードデータベース & トークン定義
+ * 2. カードデータベース (22種類へ大幅増強)
  * ------------------------------------------------------------- */
-// 属性: type (UNIT/SPELL/BUILDING), targetType (GROUND/ALL/BUILDING)
 const CardDB = [
+    // 既存ユニット
     { id: 'knight', name: 'ナイト', emoji: '⚔️', cost: 3, type: 'UNIT', hp: 800, damage: 80, speed: 50, range: 20, atkCooldown: 1.2, sightRange: 150, targetType: 'GROUND', isFlying: false, radius: 14, count: 1 },
     { id: 'archer', name: 'アーチャー', emoji: '🏹', cost: 3, type: 'UNIT', hp: 300, damage: 60, speed: 50, range: 120, atkCooldown: 1.0, sightRange: 200, targetType: 'ALL', isFlying: false, radius: 10, count: 2 },
     { id: 'giant', name: 'ジャイアント', emoji: '👹', cost: 5, type: 'UNIT', hp: 2000, damage: 120, speed: 30, range: 25, atkCooldown: 2.0, sightRange: 400, targetType: 'BUILDING', isFlying: false, radius: 20, count: 1 },
     { id: 'goblin', name: 'ゴブリン', emoji: '🗡️', cost: 2, type: 'UNIT', hp: 200, damage: 50, speed: 80, range: 15, atkCooldown: 0.8, sightRange: 150, targetType: 'GROUND', isFlying: false, radius: 9, count: 3 },
     { id: 'minions', name: 'ガーゴイル', emoji: '🦇', cost: 3, type: 'UNIT', hp: 200, damage: 45, speed: 70, range: 20, atkCooldown: 1.0, sightRange: 150, targetType: 'ALL', isFlying: true, radius: 10, count: 3 },
     
-    // 呪文
+    // 追加ユニット
+    { id: 'skeleton', name: 'スケルトン', emoji: '💀', cost: 1, type: 'UNIT', hp: 80, damage: 30, speed: 60, range: 15, atkCooldown: 1.0, sightRange: 150, targetType: 'GROUND', isFlying: false, radius: 8, count: 3 },
+    { id: 'icespirit', name: 'アイススピリット', emoji: '❄️', cost: 1, type: 'UNIT', hp: 100, damage: 50, speed: 80, range: 20, atkCooldown: 0.5, sightRange: 200, targetType: 'ALL', isFlying: false, radius: 8, isKamikaze: true, count: 1 },
+    { id: 'hogrider', name: 'ホグライダー', emoji: '🐗', cost: 4, type: 'UNIT', hp: 1200, damage: 150, speed: 90, range: 20, atkCooldown: 1.5, sightRange: 400, targetType: 'BUILDING', isFlying: false, ignoreRiver: true, radius: 15, count: 1 },
+    { id: 'babydragon', name: 'ベビードラゴン', emoji: '🐲', cost: 4, type: 'UNIT', hp: 900, damage: 100, speed: 60, range: 80, atkCooldown: 1.5, sightRange: 200, targetType: 'ALL', isFlying: true, radius: 16, count: 1 },
+    { id: 'golem', name: 'ゴーレム', emoji: '🪨', cost: 8, type: 'UNIT', hp: 3500, damage: 200, speed: 20, range: 30, atkCooldown: 2.5, sightRange: 400, targetType: 'BUILDING', isFlying: false, radius: 24, count: 1 },
+    { id: 'musketeer', name: 'マスケット銃士', emoji: '🔫', cost: 4, type: 'UNIT', hp: 600, damage: 160, speed: 50, range: 140, atkCooldown: 1.1, sightRange: 200, targetType: 'ALL', isFlying: false, radius: 12, count: 1 },
+    { id: 'minipekka', name: 'ミニP.E.K.K.A', emoji: '🤖', cost: 4, type: 'UNIT', hp: 900, damage: 300, speed: 70, range: 20, atkCooldown: 1.8, sightRange: 150, targetType: 'GROUND', isFlying: false, radius: 13, count: 1 },
+    { id: 'valkyrie', name: 'バルキリー', emoji: '🪓', cost: 4, type: 'UNIT', hp: 1300, damage: 120, speed: 50, range: 20, atkCooldown: 1.5, sightRange: 150, targetType: 'GROUND', isFlying: false, radius: 15, count: 1 },
+    { id: 'balloon', name: 'エアバルーン', emoji: '🎈', cost: 5, type: 'UNIT', hp: 1100, damage: 400, speed: 40, range: 20, atkCooldown: 3.0, sightRange: 400, targetType: 'BUILDING', isFlying: true, radius: 18, count: 1 },
+    { id: 'prince', name: 'プリンス', emoji: '🐴', cost: 5, type: 'UNIT', hp: 1400, damage: 250, speed: 75, range: 25, atkCooldown: 1.4, sightRange: 200, targetType: 'GROUND', isFlying: false, radius: 16, count: 1 },
+
+    // スペル
     { id: 'zap', name: 'ザップ', emoji: '⚡', cost: 2, type: 'SPELL', damage: 100, radius: 50, effectColor: '#ffff00' },
-    { id: 'fireball', name: 'ファイアボール', emoji: '🔥', cost: 4, type: 'SPELL', damage: 300, radius: 80, effectColor: '#ff5722' },
-    
+    { id: 'arrows', name: '矢の雨', emoji: '🌧️', cost: 3, type: 'SPELL', damage: 150, radius: 90, effectColor: '#9e9e9e' },
+    { id: 'fireball', name: 'ファイアボール', emoji: '🔥', cost: 4, type: 'SPELL', damage: 300, radius: 70, effectColor: '#ff5722' },
+    { id: 'rocket', name: 'ロケット', emoji: '🚀', cost: 6, type: 'SPELL', damage: 600, radius: 45, effectColor: '#d32f2f' },
+
     // 建物（スポナー）
     { id: 'tombstone', name: '墓石', emoji: '🪦', cost: 3, type: 'BUILDING', hp: 400, lifetime: 30, spawnInterval: 3.0, spawnToken: 'skeleton', radius: 18 },
     { id: 'goblinhut', name: 'ゴブリン小屋', emoji: '🛖', cost: 5, type: 'BUILDING', hp: 700, lifetime: 40, spawnInterval: 4.5, spawnToken: 'speargoblin', radius: 20 },
     { id: 'oven', name: 'オーブン', emoji: '🍳', cost: 4, type: 'BUILDING', hp: 600, lifetime: 35, spawnInterval: 5.0, spawnToken: 'firespirit', radius: 18 }
 ];
 
-// スポナーから出るトークン(カードではないユニット)
+// スポナー用トークン定義
 const Tokens = {
     skeleton: { name: 'スケルトン', emoji: '💀', hp: 80, damage: 30, speed: 60, range: 15, atkCooldown: 1.0, sightRange: 150, targetType: 'GROUND', isFlying: false, radius: 8 },
     speargoblin: { name: '槍ゴブリン', emoji: '👺', hp: 150, damage: 40, speed: 70, range: 120, atkCooldown: 1.3, sightRange: 200, targetType: 'ALL', isFlying: false, radius: 9 },
-    firespirit: { name: 'ファイヤ', emoji: '🔥', hp: 100, damage: 150, speed: 80, range: 20, atkCooldown: 0.5, sightRange: 200, targetType: 'ALL', isFlying: false, radius: 8, isKamikaze: true } // 特攻
+    firespirit: { name: 'ファイヤ', emoji: '🔥', hp: 100, damage: 150, speed: 80, range: 20, atkCooldown: 0.5, sightRange: 200, targetType: 'ALL', isFlying: false, radius: 8, isKamikaze: true }
 };
 
 /** -------------------------------------------------------------
- * 3. エンティティシステム
+ * 3. エンティティシステム (建物・ユニット)
  * ------------------------------------------------------------- */
 class GameObject {
     constructor(x, y, team) {
-        this.pos = new Vec2(x, y);
-        this.team = team;
-        this.active = true;
-        this.isBuilding = false;
-        this.isFlying = false;
+        this.pos = new Vec2(x, y); this.team = team; this.active = true;
+        this.isBuilding = false; this.isFlying = false;
     }
     takeDamage(amount) {
-        this.hp -= amount;
-        if (this.hp <= 0) { this.hp = 0; this.active = false; }
+        this.hp -= amount; if (this.hp <= 0) { this.hp = 0; this.active = false; }
     }
 }
 
 class Tower extends GameObject {
     constructor(x, y, team, isKing) {
         super(x, y, team);
-        this.isKing = isKing;
-        this.isBuilding = true;
-        this.radius = isKing ? 30 : 25;
-        this.maxHp = isKing ? 2500 : 1500;
-        this.hp = this.maxHp;
-        this.range = 160;
-        this.damage = isKing ? 50 : 70;
-        this.atkCooldown = 1.0;
-        this.atkTimer = 0;
-        this.activeAttack = !isKing; 
-        this.emoji = isKing ? '👑' : '🏰';
+        this.isKing = isKing; this.isBuilding = true;
+        this.radius = isKing ? 30 : 25; this.maxHp = isKing ? 2500 : 1500; this.hp = this.maxHp;
+        this.range = 160; this.damage = isKing ? 50 : 70;
+        this.atkCooldown = 1.0; this.atkTimer = 0;
+        this.activeAttack = !isKing; this.emoji = isKing ? '👑' : '🏰';
     }
     update(dt, game) {
         if (!this.activeAttack) return;
@@ -179,9 +183,6 @@ class Tower extends GameObject {
         ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2); ctx.fill();
         ctx.font = `${this.radius * 1.2}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(this.emoji, this.pos.x, this.pos.y);
-        this.drawHpBar(ctx);
-    }
-    drawHpBar(ctx) {
         const r = this.hp / this.maxHp;
         ctx.fillStyle = 'red'; ctx.fillRect(this.pos.x - this.radius, this.pos.y - this.radius - 12, this.radius*2, 5);
         ctx.fillStyle = '#4caf50'; ctx.fillRect(this.pos.x - this.radius, this.pos.y - this.radius - 12, this.radius*2 * r, 5);
@@ -191,121 +192,79 @@ class Tower extends GameObject {
 class Unit extends GameObject {
     constructor(x, y, team, typeData) {
         super(x, y, team);
-        this.emoji = typeData.emoji;
-        this.maxHp = typeData.hp;
-        this.hp = this.maxHp;
-        this.radius = typeData.radius;
+        this.emoji = typeData.emoji; this.maxHp = typeData.hp; this.hp = this.maxHp; this.radius = typeData.radius;
         this.isBuilding = typeData.type === 'BUILDING';
         
-        // 建物専用プロパティ
         if (this.isBuilding) {
-            this.lifetime = typeData.lifetime;
-            this.lifeTimer = typeData.lifetime;
-            this.spawnInterval = typeData.spawnInterval;
-            this.spawnTimer = 1.0;
+            this.lifetime = typeData.lifetime; this.lifeTimer = typeData.lifetime;
+            this.spawnInterval = typeData.spawnInterval; this.spawnTimer = 1.0;
             this.spawnToken = typeData.spawnToken;
         } else {
-            // ユニット専用プロパティ
-            this.damage = typeData.damage;
-            this.speed = typeData.speed;
-            this.range = typeData.range;
-            this.atkCooldown = typeData.atkCooldown;
-            this.sightRange = typeData.sightRange;
-            this.targetType = typeData.targetType; // GROUND, ALL, BUILDING
-            this.isFlying = typeData.isFlying;
+            this.damage = typeData.damage; this.speed = typeData.speed; this.range = typeData.range;
+            this.atkCooldown = typeData.atkCooldown; this.sightRange = typeData.sightRange;
+            this.targetType = typeData.targetType; this.isFlying = typeData.isFlying;
             this.isKamikaze = typeData.isKamikaze || false;
-            
-            this.atkTimer = 0;
-            this.searchTimer = 0;
-            this.target = null;
-            this.state = 'MOVE';
+            this.ignoreRiver = typeData.ignoreRiver || false; // ホグライダー用
+            this.atkTimer = 0; this.searchTimer = 0; this.target = null; this.state = 'MOVE';
         }
     }
 
     update(dt, game) {
         if (this.isBuilding) {
-            this.updateBuilding(dt, game);
-        } else {
-            this.updateUnit(dt, game);
-        }
-    }
-
-    updateBuilding(dt, game) {
-        this.lifeTimer -= dt;
-        this.hp = this.maxHp * (this.lifeTimer / this.lifetime);
-        if (this.hp <= 0) { this.active = false; return; }
-
-        this.spawnTimer -= dt;
-        if (this.spawnTimer <= 0) {
-            let offset = new Vec2((Math.random()-0.5)*20, (this.team===0 ? -20 : 20));
-            game.spawnUnit(this.pos.x + offset.x, this.pos.y + offset.y, this.team, Tokens[this.spawnToken]);
-            this.spawnTimer = this.spawnInterval;
-        }
-    }
-
-    updateUnit(dt, game) {
-        this.atkTimer -= dt;
-        this.searchTimer -= dt;
-
-        // ターゲット再評価 (0.5秒に1回、より近い敵や正しいタゲに切り替え)
-        if (!this.target || !this.target.active || this.searchTimer <= 0) {
-            this.target = this.findEnemy(game);
-            this.searchTimer = 0.5;
-            this.state = 'MOVE';
-        }
-
-        if (this.target) {
-            let dist = this.pos.dist(this.target.pos);
-            if (dist <= this.range + this.target.radius) {
-                this.state = 'ATTACK';
-                if (this.atkTimer <= 0) {
-                    this.target.takeDamage(this.damage);
-                    if (this.range > 30) game.particles.addProjectile(this.pos, this.target, this.team, '#aaa');
-                    else audio.playHit();
-                    
-                    if (this.isKamikaze) this.takeDamage(this.maxHp); // 自爆
-                    this.atkTimer = this.atkCooldown;
-                }
-            } else {
-                this.state = 'MOVE';
-                this.moveTowardsTarget(dt, game);
+            this.lifeTimer -= dt; this.hp = this.maxHp * (this.lifeTimer / this.lifetime);
+            if (this.hp <= 0) { this.active = false; return; }
+            this.spawnTimer -= dt;
+            if (this.spawnTimer <= 0) {
+                let offset = new Vec2((Math.random()-0.5)*20, (this.team===0 ? -20 : 20));
+                game.spawnUnit(this.pos.x + offset.x, this.pos.y + offset.y, this.team, Tokens[this.spawnToken]);
+                this.spawnTimer = this.spawnInterval;
             }
         } else {
-            // ターゲットが一切見つからない場合は前進
-            this.pos.y += (this.team === 0 ? -1 : 1) * this.speed * dt;
+            this.atkTimer -= dt; this.searchTimer -= dt;
+            if (!this.target || !this.target.active || this.searchTimer <= 0) {
+                this.target = this.findEnemy(game); this.searchTimer = 0.5; this.state = 'MOVE';
+            }
+
+            if (this.target) {
+                let dist = this.pos.dist(this.target.pos);
+                if (dist <= this.range + this.target.radius) {
+                    this.state = 'ATTACK';
+                    if (this.atkTimer <= 0) {
+                        this.target.takeDamage(this.damage);
+                        if (this.range > 30) game.particles.addProjectile(this.pos, this.target, this.team, '#aaa');
+                        else audio.playHit();
+                        if (this.isKamikaze) this.takeDamage(this.maxHp);
+                        this.atkTimer = this.atkCooldown;
+                    }
+                } else {
+                    this.state = 'MOVE'; this.moveTowardsTarget(dt, game);
+                }
+            } else {
+                this.pos.y += (this.team === 0 ? -1 : 1) * this.speed * dt;
+            }
         }
     }
 
     moveTowardsTarget(dt, game) {
         let targetPos = this.target.pos;
 
-        // 川と橋のロジック (陸ユニットのみ)
-        if (!this.isFlying && !this.isBuilding) {
+        // ホグライダーや飛行ユニットは川を無視する
+        if (!this.isFlying && !this.isBuilding && !this.ignoreRiver) {
             const RIVER_Y = game.height / 2;
             const BRIDGE_L = 80, BRIDGE_R = game.width - 80;
-            
-            // 自分が自陣、ターゲットが敵陣（またはその逆）の場合、橋を目指す
             if ((this.pos.y > RIVER_Y && targetPos.y < RIVER_Y) || (this.pos.y < RIVER_Y && targetPos.y > RIVER_Y)) {
                 let targetBridgeX = (this.pos.x < game.width/2) ? BRIDGE_L : BRIDGE_R;
-                // 橋のY座標付近（川の少し手前）までは橋に向かう
                 let bridgeY = (this.team === 0) ? RIVER_Y + 10 : RIVER_Y - 10;
-                
-                if (Math.abs(this.pos.y - RIVER_Y) > 20) {
-                    targetPos = new Vec2(targetBridgeX, bridgeY);
-                }
+                if (Math.abs(this.pos.y - RIVER_Y) > 20) targetPos = new Vec2(targetBridgeX, bridgeY);
             }
         }
 
         let dir = targetPos.sub(this.pos).normalize();
-
-        // ユニット同士の衝突回避 (Separation)
         let separation = new Vec2(0,0);
         for(let other of game.units) {
             if(other !== this && other.active && !other.isBuilding && other.isFlying === this.isFlying) {
                 let d = this.pos.dist(other.pos);
-                if(d < this.radius + other.radius) {
-                    separation = separation.add(this.pos.sub(other.pos).normalize().mult(0.5));
-                }
+                if(d < this.radius + other.radius) separation = separation.add(this.pos.sub(other.pos).normalize().mult(0.5));
             }
         }
         dir = dir.add(separation).normalize();
@@ -321,20 +280,14 @@ class Unit extends GameObject {
     findEnemy(game) {
         let closest = null, minDist = this.sightRange;
         let enemies = [].concat(game.units, game.towers).filter(e => e.team !== this.team && e.active);
-        
-        // 建物優先ターゲットのフィルタ
-        if (this.targetType === 'BUILDING') {
-            enemies = enemies.filter(e => e.isBuilding);
-        }
+        if (this.targetType === 'BUILDING') enemies = enemies.filter(e => e.isBuilding);
 
         for (let e of enemies) {
             if (!this.canAttack(e)) continue;
             let d = this.pos.dist(e.pos);
-            // レーン判定の簡略化：X座標の差が大きすぎる（逆レーン）場合は視界範囲外とする
             if (d < minDist) { minDist = d; closest = e; }
         }
 
-        // 視界内に敵がいない場合は、最も近いタワー/建物を最終目的地とする
         if (!closest) {
             let buildings = [].concat(game.towers, game.units.filter(u => u.isBuilding)).filter(e => e.team !== this.team && e.active);
             let bMinDist = Infinity;
@@ -347,19 +300,14 @@ class Unit extends GameObject {
     }
 
     draw(ctx) {
-        // 飛行ユニットの影
         if (this.isFlying) {
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y + 15, this.radius*0.8, 0, Math.PI*2); ctx.fill();
         }
-
         ctx.fillStyle = this.team === 0 ? (this.isBuilding ? '#795548' : '#64b5f6') : '#e57373';
         ctx.beginPath();
-        if (this.isBuilding) {
-            ctx.rect(this.pos.x - this.radius, this.pos.y - this.radius, this.radius*2, this.radius*2);
-        } else {
-            ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
-        }
+        if (this.isBuilding) ctx.rect(this.pos.x - this.radius, this.pos.y - this.radius, this.radius*2, this.radius*2);
+        else ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.font = `${this.radius * 1.3}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -370,7 +318,6 @@ class Unit extends GameObject {
             ctx.strokeStyle = '#fff'; ctx.stroke();
         }
 
-        // HPバー
         const r = this.hp / this.maxHp;
         ctx.fillStyle = 'red'; ctx.fillRect(this.pos.x - 10, this.pos.y - this.radius - 8, 20, 3);
         ctx.fillStyle = this.isBuilding ? '#ff9800' : '#00e676'; 
@@ -380,34 +327,22 @@ class Unit extends GameObject {
 
 class ParticleSystem {
     constructor() { this.projectiles = []; this.effects = []; }
-    addProjectile(start, target, team, color) {
-        this.projectiles.push({ pos: new Vec2(start.x, start.y), target: target, speed: 400, color: color, active: true });
-    }
-    addSpellEffect(pos, radius, color) {
-        this.effects.push({ pos: new Vec2(pos.x, pos.y), radius: radius, color: color, life: 0.3, maxLife: 0.3, active: true });
-    }
+    addProjectile(start, target, team, color) { this.projectiles.push({ pos: new Vec2(start.x, start.y), target: target, speed: 400, color: color, active: true }); }
+    addSpellEffect(pos, radius, color) { this.effects.push({ pos: new Vec2(pos.x, pos.y), radius: radius, color: color, life: 0.3, maxLife: 0.3, active: true }); }
     update(dt) {
         for(let p of this.projectiles) {
             if(!p.target.active) { p.active = false; continue; }
-            let dir = p.target.pos.sub(p.pos).normalize();
-            p.pos = p.pos.add(dir.mult(p.speed * dt));
+            let dir = p.target.pos.sub(p.pos).normalize(); p.pos = p.pos.add(dir.mult(p.speed * dt));
             if(p.pos.dist(p.target.pos) < 10) { p.active = false; audio.playHit(); }
         }
         this.projectiles = this.projectiles.filter(p => p.active);
-
-        for(let e of this.effects) {
-            e.life -= dt;
-            if(e.life <= 0) e.active = false;
-        }
+        for(let e of this.effects) { e.life -= dt; if(e.life <= 0) e.active = false; }
         this.effects = this.effects.filter(e => e.active);
     }
     draw(ctx) {
-        for(let p of this.projectiles) {
-            ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.pos.x, p.pos.y, 4, 0, Math.PI*2); ctx.fill();
-        }
+        for(let p of this.projectiles) { ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.pos.x, p.pos.y, 4, 0, Math.PI*2); ctx.fill(); }
         for(let e of this.effects) {
-            ctx.fillStyle = e.color;
-            ctx.globalAlpha = e.life / e.maxLife * 0.7;
+            ctx.fillStyle = e.color; ctx.globalAlpha = e.life / e.maxLife * 0.7;
             ctx.beginPath(); ctx.arc(e.pos.x, e.pos.y, e.radius, 0, Math.PI*2); ctx.fill();
             ctx.globalAlpha = 1.0;
         }
@@ -419,19 +354,12 @@ class ParticleSystem {
  * ------------------------------------------------------------- */
 class Player {
     constructor(deckData, isCPU = false) {
-        this.isCPU = isCPU;
-        this.elixir = 5;
-        this.maxElixir = 10;
-        
-        // デッキのシャッフル
-        this.deck = [];
-        deckData.forEach(d => this.deck.push({...d}));
+        this.isCPU = isCPU; this.elixir = 5; this.maxElixir = 10;
+        this.deck = []; deckData.forEach(d => this.deck.push({...d}));
         this.shuffleDeck();
-        
         this.hand = [];
         for(let i=0; i<4; i++) this.hand.push(this.deck.pop());
-        this.nextCard = this.deck.pop();
-        this.cpuTimer = 0;
+        this.nextCard = this.deck.pop(); this.cpuTimer = 0;
     }
     shuffleDeck() {
         for (let i = this.deck.length - 1; i > 0; i--) {
@@ -439,44 +367,28 @@ class Player {
             [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
         }
     }
-    drawCardToNext(usedCard) {
-        // 使ったカードを山札の底に戻して無限ループ化 (クラロワ仕様)
-        this.deck.unshift(usedCard);
-        this.nextCard = this.deck.pop();
-    }
+    drawCardToNext(usedCard) { this.deck.unshift(usedCard); this.nextCard = this.deck.pop(); }
     useCard(index) {
         let card = this.hand[index];
         if (this.elixir >= card.cost) {
-            this.elixir -= card.cost;
-            this.hand.splice(index, 1);
-            this.hand.push(this.nextCard);
-            this.drawCardToNext(card);
+            this.elixir -= card.cost; this.hand.splice(index, 1);
+            this.hand.push(this.nextCard); this.drawCardToNext(card);
             return card;
         }
         return null;
     }
     update(dt, game) {
         if (this.elixir < this.maxElixir) this.elixir += 1.0 * dt;
-        
-        // CPU AI 強化版
         if (this.isCPU) {
             this.cpuTimer += dt;
-            if (this.cpuTimer > 1.2) { // より高い頻度で思考
+            if (this.cpuTimer > 1.2) {
                 let playables = this.hand.map((c, i) => ({c, i})).filter(x => x.c.cost <= this.elixir);
-                // エリクサーが溢れそう、またはランダムでガツガツ攻める
                 if (playables.length > 0 && (this.elixir > 8 || Math.random() > 0.4)) {
                     let pick = playables[Math.floor(Math.random() * playables.length)];
                     let card = this.useCard(pick.i);
-                    
                     let spawnX = Math.random() > 0.5 ? 80 : 320; 
-                    let spawnY = 150 + Math.random() * 80; // 敵陣のタワー付近〜橋の手前
-                    
-                    // スペルは自陣のタワーや敵ユニットの塊を狙う（今回は簡易的にプレイヤー陣地へ）
-                    if (card.type === 'SPELL') {
-                        spawnY = 550; // プレイヤーのタワー付近
-                        spawnX = Math.random() > 0.5 ? 80 : 320;
-                    }
-                    
+                    let spawnY = 150 + Math.random() * 80;
+                    if (card.type === 'SPELL') { spawnY = 550; spawnX = Math.random() > 0.5 ? 80 : 320; }
                     game.deployCard(card, new Vec2(spawnX, spawnY), 1);
                 }
                 this.cpuTimer = 0;
@@ -490,44 +402,30 @@ class Player {
  * ------------------------------------------------------------- */
 class GameEngine {
     constructor(playerDeck) {
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
+        this.canvas = document.getElementById('gameCanvas'); this.ctx = this.canvas.getContext('2d');
         this.width = this.canvas.width; this.height = this.canvas.height;
-        this.lastTime = performance.now();
-        this.state = 'PLAY';
+        this.lastTime = performance.now(); this.state = 'PLAY';
         
-        this.particles = new ParticleSystem();
-        this.towers = []; this.units = [];
+        this.particles = new ParticleSystem(); this.towers = []; this.units = [];
         
-        // CPUは強そうなカードを固定で持つ
-        const cpuDeck = CardDB.slice(0, 8);
-        this.player = new Player(playerDeck, false);
-        this.enemy = new Player(cpuDeck, true);
+        // CPUはランダムに8枚選出する
+        const cpuDeck = [...CardDB].sort(() => 0.5 - Math.random()).slice(0, 8);
+        this.player = new Player(playerDeck, false); this.enemy = new Player(cpuDeck, true);
         
-        this.draggingCardIndex = -1;
-        this.draggingCard = null;
-        this.dragEl = null;
-        this.previewPos = null;
-
-        this.setupTowers();
-        this.setupUI();
-        this.bindGlobalDragEvents();
+        this.draggingCardIndex = -1; this.draggingCard = null; this.dragEl = null; this.previewPos = null;
+        this.setupTowers(); this.setupUI(); this.bindGlobalDragEvents();
     }
     
     setupTowers() {
         this.towers.push(new Tower(this.width / 2, this.height - 40, 0, true));
         this.towers.push(new Tower(80, this.height - 180, 0, false));
         this.towers.push(new Tower(this.width - 80, this.height - 180, 0, false));
-        
         this.towers.push(new Tower(this.width / 2, 40, 1, true));
         this.towers.push(new Tower(80, 180, 1, false));
         this.towers.push(new Tower(this.width - 80, 180, 1, false));
     }
 
-    setupUI() {
-        this.cardsContainer = document.getElementById('cards-container');
-        this.renderHandUI();
-    }
+    setupUI() { this.cardsContainer = document.getElementById('cards-container'); this.renderHandUI(); }
 
     renderHandUI() {
         this.cardsContainer.innerHTML = '';
@@ -535,23 +433,19 @@ class GameEngine {
             let div = document.createElement('div');
             div.className = `card ${this.player.elixir >= card.cost ? '' : 'disabled'}`;
             div.innerHTML = `<div class="card-cost">${card.cost}</div><div class="card-emoji">${card.emoji}</div><div class="card-name">${card.name}</div>`;
-            
             const startDrag = (e) => {
                 if (this.player.elixir < card.cost || this.state !== 'PLAY') return;
                 e.preventDefault();
                 this.draggingCardIndex = idx; this.draggingCard = card;
-                
                 this.dragEl = div.cloneNode(true);
                 this.dragEl.style.position = 'fixed'; this.dragEl.style.pointerEvents = 'none';
                 this.dragEl.style.zIndex = 1000; this.dragEl.style.transform = 'scale(1.2)';
                 document.body.appendChild(this.dragEl);
                 this.moveDragEvent(e);
             };
-            div.addEventListener('mousedown', startDrag);
-            div.addEventListener('touchstart', startDrag, { passive: false });
+            div.addEventListener('mousedown', startDrag); div.addEventListener('touchstart', startDrag, { passive: false });
             this.cardsContainer.appendChild(div);
         });
-        
         let nextDiv = document.createElement('div');
         nextDiv.style = "width:12%; aspect-ratio:3/4; background:#555; border-radius:5px; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0.8; font-size:10px; color:#ccc;";
         nextDiv.innerHTML = `NEXT<div style="font-size:20px; margin-top:2px;">${this.player.nextCard.emoji}</div>`;
@@ -560,10 +454,7 @@ class GameEngine {
 
     getCanvasPos(clientX, clientY) {
         const rect = this.canvas.getBoundingClientRect();
-        return {
-            x: (clientX - rect.left) * (this.canvas.width / rect.width),
-            y: (clientY - rect.top) * (this.canvas.height / rect.height)
-        };
+        return { x: (clientX - rect.left) * (this.canvas.width / rect.width), y: (clientY - rect.top) * (this.canvas.height / rect.height) };
     }
 
     bindGlobalDragEvents() {
@@ -572,18 +463,15 @@ class GameEngine {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             const rect = this.dragEl.getBoundingClientRect();
-            this.dragEl.style.left = (clientX - rect.width / 2) + 'px';
-            this.dragEl.style.top = (clientY - rect.height) + 'px';
+            this.dragEl.style.left = (clientX - rect.width / 2) + 'px'; this.dragEl.style.top = (clientY - rect.height) + 'px';
             this.previewPos = this.getCanvasPos(clientX, clientY);
         };
-
         const endDrag = (e) => {
             if (!this.draggingCard) return;
             const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
             const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
             const pos = this.getCanvasPos(clientX, clientY);
             
-            // スペルはどこでもOK、それ以外は自陣のみ
             let canDeploy = (pos.x >= 0 && pos.x <= this.width && pos.y >= 0 && pos.y <= this.height);
             if (this.draggingCard.type !== 'SPELL' && pos.y < this.height / 2) canDeploy = false;
 
@@ -592,29 +480,18 @@ class GameEngine {
                 if(card) this.deployCard(card, pos, 0);
                 this.renderHandUI();
             }
-            
             if(this.dragEl) { this.dragEl.remove(); this.dragEl = null; }
             this.draggingCard = null; this.draggingCardIndex = -1; this.previewPos = null;
         };
-
-        document.addEventListener('mousemove', this.moveDragEvent);
-        document.addEventListener('touchmove', this.moveDragEvent, { passive: false });
-        document.addEventListener('mouseup', endDrag);
-        document.addEventListener('touchend', endDrag);
+        document.addEventListener('mousemove', this.moveDragEvent); document.addEventListener('touchmove', this.moveDragEvent, { passive: false });
+        document.addEventListener('mouseup', endDrag); document.addEventListener('touchend', endDrag);
     }
 
     deployCard(card, pos, team) {
         if (card.type === 'SPELL') {
-            audio.playSpell();
-            this.particles.addSpellEffect(pos, card.radius, card.effectColor);
-            // 範囲ダメージ
-            [].concat(this.units, this.towers).forEach(u => {
-                if(u.team !== team && u.pos.dist(pos) <= card.radius) u.takeDamage(card.damage);
-            });
-            // タワー起動 (キングタワーにダメージが入った場合、activeAttackにするロジック)
-            this.towers.forEach(t => {
-                if(t.team !== team && t.isKing && t.hp < t.maxHp) t.activeAttack = true;
-            });
+            audio.playSpell(); this.particles.addSpellEffect(pos, card.radius, card.effectColor);
+            [].concat(this.units, this.towers).forEach(u => { if(u.team !== team && u.pos.dist(pos) <= card.radius) u.takeDamage(card.damage); });
+            this.towers.forEach(t => { if(t.team !== team && t.isKing && t.hp < t.maxHp) t.activeAttack = true; });
         } else {
             audio.playSpawn();
             for(let i=0; i<(card.count||1); i++) {
@@ -628,19 +505,12 @@ class GameEngine {
 
     update(dt) {
         if(this.state !== 'PLAY') return;
-
         this.player.update(dt, this); this.enemy.update(dt, this);
         document.getElementById('elixir-bar').style.width = `${(this.player.elixir / 10) * 100}%`;
         document.getElementById('elixir-text').innerText = `${Math.floor(this.player.elixir)} / 10`;
         if(!this.draggingCard) this.renderHandUI();
-
-        this.towers.forEach(t => t.update(dt, this));
-        this.units.forEach(u => u.update(dt, this));
-        this.particles.update(dt);
-
-        let towerCount = this.towers.length;
-        this.towers = this.towers.filter(t => t.active);
-        // タワー破壊時、キングタワーをアクティブにする
+        this.towers.forEach(t => t.update(dt, this)); this.units.forEach(u => u.update(dt, this)); this.particles.update(dt);
+        let towerCount = this.towers.length; this.towers = this.towers.filter(t => t.active);
         if(this.towers.length < towerCount) {
              this.towers.filter(t => t.isKing).forEach(k => k.activeAttack = true);
              this.checkWinCondition();
@@ -649,50 +519,38 @@ class GameEngine {
     }
     
     checkWinCondition() {
-        let pKing = this.towers.find(t => t.team === 0 && t.isKing);
-        let eKing = this.towers.find(t => t.team === 1 && t.isKing);
+        let pKing = this.towers.find(t => t.team === 0 && t.isKing); let eKing = this.towers.find(t => t.team === 1 && t.isKing);
         if(!pKing) this.gameOver("LOSE..."); else if(!eKing) this.gameOver("WIN!!");
     }
     
     gameOver(msg) {
-        this.state = 'OVER';
-        let overlay = document.getElementById('overlay');
-        overlay.style.display = 'flex';
-        overlay.innerHTML = `<h1 style="color:#ffeb3b; font-size:40px; text-shadow:2px 2px 0 #000;">${msg}</h1><button onclick="location.reload()" style="margin-top:20px;">RETRY</button>`;
+        this.state = 'OVER'; let overlay = document.getElementById('overlay'); overlay.style.display = 'flex';
+        overlay.innerHTML = `<h1 style="color:#ffeb3b; font-size:40px; text-shadow:2px 2px 0 #000;">${msg}</h1><button onclick="location.reload()" style="margin-top:20px; z-index:999; position:relative;">RETRY</button>`;
     }
 
     draw() {
         this.ctx.fillStyle = '#689f38'; this.ctx.fillRect(0, 0, this.width, this.height);
-        this.ctx.fillStyle = '#29b6f6'; this.ctx.fillRect(0, this.height/2 - 20, this.width, 40); // 川
-        this.ctx.fillStyle = '#8d6e63'; this.ctx.fillRect(60, this.height/2 - 20, 40, 40); this.ctx.fillRect(this.width - 100, this.height/2 - 20, 40, 40); // 橋
-
+        this.ctx.fillStyle = '#29b6f6'; this.ctx.fillRect(0, this.height/2 - 20, this.width, 40);
+        this.ctx.fillStyle = '#8d6e63'; this.ctx.fillRect(60, this.height/2 - 20, 40, 40); this.ctx.fillRect(this.width - 100, this.height/2 - 20, 40, 40);
         if(this.draggingCard) {
             this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
             if(this.draggingCard.type !== 'SPELL') this.ctx.fillRect(0, this.height/2, this.width, this.height/2);
-            else this.ctx.fillRect(0, 0, this.width, this.height); // スペルは全域
+            else this.ctx.fillRect(0, 0, this.width, this.height);
         }
-
-        this.towers.forEach(t => t.draw(this.ctx));
-        this.units.forEach(u => u.draw(this.ctx));
-        this.particles.draw(this.ctx);
-        
+        this.towers.forEach(t => t.draw(this.ctx)); this.units.forEach(u => u.draw(this.ctx)); this.particles.draw(this.ctx);
         if(this.draggingCard && this.previewPos) {
-            this.ctx.beginPath();
-            let r = this.draggingCard.type === 'SPELL' ? this.draggingCard.radius : this.draggingCard.radius;
+            this.ctx.beginPath(); let r = this.draggingCard.type === 'SPELL' ? this.draggingCard.radius : this.draggingCard.radius;
             this.ctx.arc(this.previewPos.x, this.previewPos.y, r, 0, Math.PI * 2);
             let valid = this.draggingCard.type === 'SPELL' || this.previewPos.y >= this.height/2;
             this.ctx.strokeStyle = valid ? '#fff' : 'rgba(255, 0, 0, 0.8)';
             this.ctx.lineWidth = 3; this.ctx.setLineDash([5, 5]); this.ctx.stroke(); this.ctx.setLineDash([]);
-            
             this.ctx.globalAlpha = 0.5; this.ctx.font = `24px sans-serif`; this.ctx.textAlign = "center"; this.ctx.textBaseline = "middle";
-            this.ctx.fillText(this.draggingCard.emoji, this.previewPos.x, this.previewPos.y);
-            this.ctx.globalAlpha = 1.0;
+            this.ctx.fillText(this.draggingCard.emoji, this.previewPos.x, this.previewPos.y); this.ctx.globalAlpha = 1.0;
         }
     }
 
     loop(timestamp) {
-        const dt = (timestamp - this.lastTime) / 1000;
-        this.lastTime = timestamp;
+        const dt = (timestamp - this.lastTime) / 1000; this.lastTime = timestamp;
         if(dt < 0.1) { this.update(dt); this.draw(); }
         requestAnimationFrame((ts) => this.loop(ts));
     }
@@ -731,7 +589,6 @@ startBtn.addEventListener('click', () => {
     audio.init();
     document.getElementById('deck-builder').style.display = 'none';
     document.getElementById('game-container').style.display = 'block';
-    
     const game = new GameEngine(selectedCards);
     requestAnimationFrame((ts) => { game.lastTime = ts; game.loop(ts); });
 });
