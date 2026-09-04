@@ -1,386 +1,605 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HTMLコマンドバトルゲーム</title>
-<style>
-    :root {
-        --primary: #ffd700;
-        --bg: #111;
-        --panel: #222;
-        --text: #eee;
-    }
-    body {
-        background-color: var(--bg);
-        color: var(--text);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        user-select: none;
-    }
-    #game-container {
-        width: 100%;
-        max-width: 600px;
-        height: 100vh;
-        max-height: 800px;
-        background: #000;
-        border: 2px solid #444;
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-    }
-    .screen {
-        display: none;
-        flex-direction: column;
-        height: 100%;
-        padding: 20px;
-        box-sizing: border-box;
-    }
-    .screen.active {
-        display: flex;
-    }
-    h1, h2 { text-align: center; color: var(--primary); margin-top: 0; }
-    button {
-        background: #333; color: white; border: 2px solid #555; padding: 10px 20px;
-        font-size: 16px; cursor: pointer; border-radius: 5px; margin: 5px;
-        transition: 0.2s;
-    }
-    button:hover { background: #555; border-color: var(--primary); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* Deck & Enemy Selection */
-    .grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-    .card {
-        background: var(--panel); border: 2px solid #555; border-radius: 8px;
-        width: 30%; min-width: 120px; padding: 10px; text-align: center; cursor: pointer;
-    }
-    .card:hover { border-color: var(--primary); }
-    .card.selected { border-color: #0f0; background: #040; }
-    .emoji { font-size: 40px; margin: 10px 0; }
-    .stats { font-size: 12px; color: #aaa; }
-
-    .enemy-group {
-        background: var(--panel); border: 2px solid #555; border-radius: 8px;
-        padding: 15px; margin-bottom: 10px; cursor: pointer; display: flex;
-        justify-content: space-around;
-    }
-    .enemy-group:hover { border-color: #f00; background: #400; }
-
-    /* Battle Screen */
-    .battle-area { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-    .team { display: flex; justify-content: space-around; align-items: flex-end; height: 150px; }
-    .team.enemies { align-items: flex-start; }
-    .battler {
-        background: var(--panel); border: 2px solid #555; border-radius: 8px;
-        padding: 10px; text-align: center; width: 30%; position: relative;
-        transition: transform 0.2s;
-    }
-    .battler.active-turn { border-color: var(--primary); transform: translateY(-10px); box-shadow: 0 0 10px var(--primary); }
-    .battler.dead { opacity: 0.3; filter: grayscale(100%); }
-    .hp-bar-bg { background: #555; height: 10px; border-radius: 5px; margin-top: 5px; overflow: hidden; }
-    .hp-bar-fill { background: #0f0; height: 100%; transition: width 0.3s; }
-    
-    #message-box {
-        background: rgba(0,0,0,0.8); border: 2px solid var(--primary); border-radius: 8px;
-        padding: 15px; height: 120px; font-size: 18px; text-align: center;
-        display: flex; flex-direction: column; justify-content: center;
-    }
-    .command-roulette { font-size: 24px; font-weight: bold; color: var(--primary); margin-top: 10px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>本格クラロワ風 RTSゲーム</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background-color: #222; color: #fff; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        #game-container { position: relative; width: 400px; height: 700px; background: #4caf50; border: 4px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        canvas { display: block; width: 100%; height: 100%; }
+        #ui-layer { position: absolute; bottom: 0; width: 100%; height: 160px; background: rgba(0, 0, 0, 0.8); display: flex; flex-direction: column; }
+        #elixir-bar-container { width: 90%; height: 20px; background: #333; margin: 10px auto; border-radius: 10px; border: 2px solid #555; position: relative; overflow: hidden; }
+        #elixir-bar { height: 100%; width: 0%; background: #e91e63; transition: width 0.1s linear; }
+        #elixir-text { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; line-height: 20px; text-shadow: 1px 1px 0 #000; }
+        #cards-container { display: flex; justify-content: space-around; align-items: center; flex: 1; padding: 0 10px; }
+        .card { width: 70px; height: 90px; background: #ccc; border: 2px solid #fff; border-radius: 8px; position: relative; cursor: pointer; transition: transform 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #000; font-weight: bold; }
+        .card.active { border-color: #ffeb3b; transform: translateY(-10px); box-shadow: 0 0 15px #ffeb3b; }
+        .card.disabled { opacity: 0.5; filter: grayscale(100%); cursor: not-allowed; }
+        .card-cost { position: absolute; top: -10px; left: -10px; background: #e91e63; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid #fff; }
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        button { padding: 15px 30px; font-size: 20px; cursor: pointer; background: #4caf50; color: #fff; border: none; border-radius: 5px; margin-top: 20px; font-weight: bold; font-family: inherit;}
+        button:hover { background: #45a049; }
+    </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="screen-title" class="screen active">
-        <h1 style="margin-top: 40%;">モンスターバトル<br>〜ブラウザ版〜</h1>
-        <p style="text-align:center; color:#aaa;">※音声が出ます</p>
-        <div style="text-align: center;">
-            <button onclick="initGame()">ゲームスタート</button>
+    <canvas id="gameCanvas" width="400" height="700"></canvas>
+    
+    <div id="ui-layer">
+        <div id="elixir-bar-container">
+            <div id="elixir-bar"></div>
+            <div id="elixir-text">0 / 10</div>
         </div>
-    </div>
-
-    <div id="screen-deck" class="screen">
-        <h2>チーム編成 (3体選ぶ)</h2>
-        <div class="grid" id="deck-grid"></div>
-        <div style="text-align: center; margin-top: 20px;">
-            <p id="deck-count">選択中: 0 / 3</p>
-            <button id="btn-next-enemy" onclick="showEnemySelect()" disabled>敵を探す</button>
-        </div>
-    </div>
-
-    <div id="screen-enemy" class="screen">
-        <h2>戦う敵を選べ！</h2>
-        <div id="enemy-list" style="overflow-y: auto; flex: 1;"></div>
-    </div>
-
-    <div id="screen-battle" class="screen">
-        <div class="battle-area">
-            <div class="team enemies" id="battle-enemies"></div>
-            <div id="message-box">
-                <div id="battle-msg">バトル開始！</div>
-                <div id="battle-roulette" class="command-roulette"></div>
+        <div id="cards-container">
             </div>
-            <div class="team players" id="battle-players"></div>
-        </div>
     </div>
 
-    <div id="screen-result" class="screen">
-        <h1 id="result-title" style="margin-top: 40%;"></h1>
-        <div style="text-align: center;">
-            <button onclick="resetGame()">タイトルへ戻る</button>
-        </div>
+    <div id="overlay">
+        <h1 style="color:#ffeb3b; text-align:center;">タワーディフェンス<br>プロトタイプ</h1>
+        <p style="margin-top:20px; font-size:14px; text-align:center;">クリックしてゲーム開始<br>(サウンドが再生されます)</p>
+        <button id="start-btn">GAME START</button>
     </div>
 </div>
 
 <script>
-    // --- Sound System (Web Audio API) ---
-    let audioCtx;
-    function initAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
+/**
+ * -------------------------------------------------------------
+ * 1. 数学・ユーティリティエンジン (Vector Math & Utils)
+ * -------------------------------------------------------------
+ */
+class Vec2 {
+    constructor(x, y) { this.x = x; this.y = y; }
+    add(v) { return new Vec2(this.x + v.x, this.y + v.y); }
+    sub(v) { return new Vec2(this.x - v.x, this.y - v.y); }
+    mult(n) { return new Vec2(this.x * n, this.y * n); }
+    mag() { return Math.sqrt(this.x * this.x + this.y * this.y); }
+    normalize() { let m = this.mag(); return m === 0 ? new Vec2(0, 0) : new Vec2(this.x / m, this.y / m); }
+    dist(v) { return this.sub(v).mag(); }
+}
+
+const Utils = {
+    randomRange: (min, max) => Math.random() * (max - min) + min,
+    randomInt: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+};
+
+/**
+ * -------------------------------------------------------------
+ * 2. サウンドエンジン (Web Audio API Synthesizer)
+ * -------------------------------------------------------------
+ */
+class SoundEngine {
+    constructor() {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.enabled = false;
     }
-    function playSound(type) {
-        if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+    init() {
+        if(this.ctx.state === 'suspended') this.ctx.resume();
+        this.enabled = true;
+    }
+    playTone(freq, type, duration, vol=0.1) {
+        if(!this.enabled) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
         osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    }
+    playSpawn() { this.playTone(440, 'square', 0.1, 0.05); setTimeout(() => this.playTone(660, 'square', 0.2, 0.05), 100); }
+    playAttackMelee() { this.playTone(150, 'sawtooth', 0.1, 0.08); }
+    playAttackRange() { this.playTone(800, 'sine', 0.1, 0.05); }
+    playHit() { this.playTone(100, 'square', 0.1, 0.1); }
+    playTowerDestroy() { this.playTone(50, 'sawtooth', 0.5, 0.2); setTimeout(() => this.playTone(40, 'sawtooth', 0.8, 0.2), 200); }
+    playElixirMax() { this.playTone(1200, 'sine', 0.2, 0.05); }
+}
+const audio = new SoundEngine();
 
-        const now = audioCtx.currentTime;
-        if (type === 'select') {
-            osc.type = 'square'; osc.frequency.setValueAtTime(600, now);
-            gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            osc.start(now); osc.stop(now + 0.1);
-        } else if (type === 'roulette') {
-            osc.type = 'triangle'; osc.frequency.setValueAtTime(800, now);
-            gain.gain.setValueAtTime(0.05, now);
-            osc.start(now); osc.stop(now + 0.05);
-        } else if (type === 'attack') {
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
-            gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-            osc.start(now); osc.stop(now + 0.2);
-        } else if (type === 'damage') {
-            osc.type = 'square'; osc.frequency.setValueAtTime(100, now);
-            gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now); osc.stop(now + 0.3);
-        } else if (type === 'win') {
-            osc.type = 'sine'; osc.frequency.setValueAtTime(440, now); osc.frequency.setValueAtTime(554, now + 0.1); osc.frequency.setValueAtTime(659, now + 0.2);
-            gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.6);
-            osc.start(now); osc.stop(now + 0.6);
+/**
+ * -------------------------------------------------------------
+ * 3. エンティティシステム (GameObject, Unit, Tower)
+ * -------------------------------------------------------------
+ */
+class GameObject {
+    constructor(x, y, team) {
+        this.pos = new Vec2(x, y);
+        this.team = team; // 0: Player, 1: Enemy
+        this.hp = 100;
+        this.maxHp = 100;
+        this.radius = 15;
+        this.active = true;
+        this.id = Math.random().toString(36).substr(2, 9);
+    }
+    takeDamage(amount) {
+        this.hp -= amount;
+        if (this.hp <= 0) {
+            this.hp = 0;
+            this.active = false;
         }
     }
+    draw(ctx) { /* Override */ }
+    update(dt, game) { /* Override */ }
+}
 
-    // --- Game Data ---
-    const DB_MONSTERS = [
-        { id: 1, name: "戦士", emoji: "⚔️", hp: 120, atk: 30, spd: 40, cmds: [{name:"こうげき", pow:1}, {name:"会心の一撃", pow:2}, {name:"ミス", pow:0}, {name:"こうげき", pow:1}] },
-        { id: 2, name: "魔法使い", emoji: "🧙", hp: 80, atk: 40, spd: 30, cmds: [{name:"ファイア", pow:1.2}, {name:"大魔法", pow:2.5}, {name:"ミス", pow:0}, {name:"ファイア", pow:1.2}] },
-        { id: 3, name: "盗賊", emoji: "🗡️", hp: 90, atk: 20, spd: 80, cmds: [{name:"2回こうげき", pow:1.5}, {name:"こうげき", pow:1}, {name:"ミス", pow:0}, {name:"こうげき", pow:1}] },
-        { id: 4, name: "騎士", emoji: "🛡️", hp: 150, atk: 25, spd: 20, cmds: [{name:"かばう(攻撃)", pow:0.8}, {name:"シールドバッシュ", pow:1.5}, {name:"こうげき", pow:1}, {name:"ミス", pow:0}] },
-        { id: 5, name: "ドラゴン", emoji: "🐉", hp: 200, atk: 50, spd: 50, cmds: [{name:"ほのお", pow:1.2}, {name:"かみくだく", pow:2}, {name:"ミス", pow:0}, {name:"ためる(ミス)", pow:0}] },
-        { id: 6, name: "スライム", emoji: "💧", hp: 50, atk: 10, spd: 60, cmds: [{name:"たいあたり", pow:1}, {name:"分裂(攻撃)", pow:1.5}, {name:"ミス", pow:0}, {name:"ミス", pow:0}] }
-    ];
-
-    let playerDeck = [];
-    let enemyDeck = [];
-    let allFighters = [];
-
-    // --- Core Functions ---
-    function switchScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
+class Tower extends GameObject {
+    constructor(x, y, team, isKing) {
+        super(x, y, team);
+        this.isKing = isKing;
+        this.radius = isKing ? 30 : 25;
+        this.maxHp = isKing ? 2500 : 1500;
+        this.hp = this.maxHp;
+        this.range = 150;
+        this.damage = isKing ? 50 : 70;
+        this.atkCooldown = 1.0;
+        this.atkTimer = 0;
+        this.activeAttack = !isKing; // キングタワーは最初は攻撃しない設定など可能
     }
-
-    function initGame() {
-        initAudio();
-        playSound('select');
-        playerDeck = [];
-        renderDeckBuilder();
-        switchScreen('screen-deck');
+    update(dt, game) {
+        if (!this.activeAttack) return;
+        this.atkTimer -= dt;
+        if (this.atkTimer <= 0) {
+            // Find target
+            let target = this.findTarget(game.units);
+            if (target) {
+                target.takeDamage(this.damage);
+                audio.playAttackRange();
+                game.particles.addProjectile(this.pos, target, this.team);
+                this.atkTimer = this.atkCooldown;
+            }
+        }
     }
+    findTarget(units) {
+        let closest = null;
+        let minDist = this.range;
+        for (let u of units) {
+            if (u.team !== this.team && u.active) {
+                let d = this.pos.dist(u.pos);
+                if (d < minDist) { minDist = d; closest = u; }
+            }
+        }
+        return closest;
+    }
+    draw(ctx) {
+        ctx.fillStyle = this.team === 0 ? '#2196f3' : '#f44336';
+        ctx.fillRect(this.pos.x - this.radius, this.pos.y - this.radius, this.radius*2, this.radius*2);
+        
+        // 王冠のピクセル風装飾
+        if(this.isKing) {
+            ctx.fillStyle = '#ffeb3b';
+            ctx.fillRect(this.pos.x - 15, this.pos.y - this.radius - 10, 30, 10);
+        }
+        
+        // HPバー
+        const hpRatio = this.hp / this.maxHp;
+        ctx.fillStyle = 'red';
+        ctx.fillRect(this.pos.x - this.radius, this.pos.y - this.radius - 8, this.radius*2, 4);
+        ctx.fillStyle = '#4caf50';
+        ctx.fillRect(this.pos.x - this.radius, this.pos.y - this.radius - 8, this.radius*2 * hpRatio, 4);
+    }
+}
 
-    function renderDeckBuilder() {
-        const grid = document.getElementById('deck-grid');
-        grid.innerHTML = '';
-        DB_MONSTERS.forEach(m => {
-            const el = document.createElement('div');
-            el.className = 'card';
-            el.innerHTML = `<div class="emoji">${m.emoji}</div><b>${m.name}</b><div class="stats">HP:${m.hp}<br>SPD:${m.spd}</div>`;
-            el.onclick = () => {
-                if (playerDeck.includes(m)) {
-                    playerDeck = playerDeck.filter(c => c !== m);
-                    el.classList.remove('selected');
-                } else if (playerDeck.length < 3) {
-                    playerDeck.push(m);
-                    el.classList.add('selected');
-                    playSound('select');
+class Unit extends GameObject {
+    constructor(x, y, team, typeData) {
+        super(x, y, team);
+        this.type = typeData.name;
+        this.maxHp = typeData.hp;
+        this.hp = this.maxHp;
+        this.damage = typeData.damage;
+        this.speed = typeData.speed;
+        this.range = typeData.range;
+        this.atkCooldown = typeData.atkCooldown;
+        this.radius = typeData.radius;
+        this.color = typeData.color;
+        this.isRanged = typeData.range > 30;
+        
+        this.atkTimer = 0;
+        this.target = null;
+        this.state = 'MOVE'; // MOVE, ATTACK
+    }
+    update(dt, game) {
+        this.atkTimer -= dt;
+        
+        // ターゲット選定処理（ステートマシン）
+        if (!this.target || !this.target.active) {
+            this.target = this.findClosestEnemy(game);
+            this.state = 'MOVE';
+        }
+
+        if (this.target) {
+            let dist = this.pos.dist(this.target.pos);
+            if (dist <= this.range) {
+                this.state = 'ATTACK';
+                if (this.atkTimer <= 0) {
+                    this.target.takeDamage(this.damage);
+                    if(this.isRanged) {
+                        audio.playAttackRange();
+                        game.particles.addProjectile(this.pos, this.target, this.team);
+                    } else {
+                        audio.playAttackMelee();
+                        audio.playHit();
+                    }
+                    this.atkTimer = this.atkCooldown;
                 }
-                document.getElementById('deck-count').innerText = `選択中: ${playerDeck.length} / 3`;
-                document.getElementById('btn-next-enemy').disabled = playerDeck.length !== 3;
-            };
-            grid.appendChild(el);
-        });
-    }
-
-    function showEnemySelect() {
-        playSound('select');
-        const list = document.getElementById('enemy-list');
-        list.innerHTML = '';
-        // 3〜5のランダムな敵パーティを生成
-        const groupCount = Math.floor(Math.random() * 3) + 3; 
-        
-        for (let i = 0; i < groupCount; i++) {
-            const enemyCount = Math.floor(Math.random() * 3) + 1; // 1〜3体
-            let team = [];
-            let html = '';
-            for (let j = 0; j < enemyCount; j++) {
-                const randomMob = DB_MONSTERS[Math.floor(Math.random() * DB_MONSTERS.length)];
-                team.push(JSON.parse(JSON.stringify(randomMob))); // ディープコピー
-                html += `<div style="text-align:center"><div style="font-size:30px;">${randomMob.emoji}</div><small>${randomMob.name}</small></div>`;
-            }
-            const groupEl = document.createElement('div');
-            groupEl.className = 'enemy-group';
-            groupEl.innerHTML = html;
-            groupEl.onclick = () => startBattle(team);
-            list.appendChild(groupEl);
-        }
-        switchScreen('screen-enemy');
-    }
-
-    // --- Battle System ---
-    function startBattle(enemies) {
-        playSound('select');
-        enemyDeck = enemies;
-        // ファイターデータの初期化
-        allFighters = [];
-        playerDeck.forEach((m, i) => allFighters.push({ ...m, isPlayer: true, currentHp: m.hp, index: i }));
-        enemyDeck.forEach((m, i) => allFighters.push({ ...m, isPlayer: false, currentHp: m.hp, index: i }));
-        
-        renderBattleField();
-        switchScreen('screen-battle');
-        msg("バトル開始！");
-        setTimeout(battleLoop, 1500);
-    }
-
-    function renderBattleField() {
-        const pContainer = document.getElementById('battle-players');
-        const eContainer = document.getElementById('battle-enemies');
-        pContainer.innerHTML = ''; eContainer.innerHTML = '';
-
-        allFighters.forEach(f => {
-            const hpPercent = Math.max(0, (f.currentHp / f.hp) * 100);
-            const html = `
-                <div class="battler ${f.currentHp <= 0 ? 'dead' : ''}" id="fighter-${f.isPlayer?'p':'e'}-${f.index}">
-                    <div style="font-size:30px;">${f.emoji}</div>
-                    <div style="font-size:12px; font-weight:bold;">${f.name}</div>
-                    <div class="hp-bar-bg"><div class="hp-bar-fill" style="width:${hpPercent}%; background:${hpPercent<30?'red':'#0f0'};"></div></div>
-                </div>
-            `;
-            if (f.isPlayer) pContainer.innerHTML += html;
-            else eContainer.innerHTML += html;
-        });
-    }
-
-    function msg(text) { document.getElementById('battle-msg').innerText = text; document.getElementById('battle-roulette').innerText = ""; }
-    function msgRoulette(text) { document.getElementById('battle-roulette').innerText = text; }
-
-    async function battleLoop() {
-        // 生きているキャラを抽出
-        const alive = allFighters.filter(f => f.currentHp > 0);
-        
-        // 勝敗判定
-        const pAlive = alive.filter(f => f.isPlayer).length;
-        const eAlive = alive.filter(f => !f.isPlayer).length;
-        
-        if (pAlive === 0) { showResult(false); return; }
-        if (eAlive === 0) { showResult(true); return; }
-
-        // スピード順（同速はランダム）でソートし、最初のキャラが行動
-        alive.sort((a, b) => b.spd - a.spd || Math.random() - 0.5);
-        const attacker = alive[0]; // 今回のターンは一番早いキャラ（※本来のターン制ならキュー管理ですが、簡易的に毎ターン最速が動く仕様にします。行動済みフラグで管理するフルターン制に変更）
-
-        // ※簡易ターン制: 毎ターン全員の行動順を決めるキュー方式
-        let turnQueue = [...alive];
-        
-        const executeNextTurn = async () => {
-            if (turnQueue.length === 0) {
-                setTimeout(battleLoop, 500); // 次のラウンドへ
-                return;
-            }
-            
-            const current = turnQueue.shift();
-            if (current.currentHp <= 0) { executeNextTurn(); return; } // 死んでたらスキップ
-
-            // 勝敗判定(途中)
-            if (allFighters.filter(f => f.isPlayer && f.currentHp > 0).length === 0) { showResult(false); return; }
-            if (allFighters.filter(f => !f.isPlayer && f.currentHp > 0).length === 0) { showResult(true); return; }
-
-            // アクティブ表示
-            document.querySelectorAll('.battler').forEach(el => el.classList.remove('active-turn'));
-            document.getElementById(`fighter-${current.isPlayer?'p':'e'}-${current.index}`).classList.add('active-turn');
-            
-            msg(`${current.name}のターン！`);
-            
-            // ルーレット演出 (約1秒)
-            const chosenCmd = await playRoulette(current.cmds);
-            
-            // ターゲット選択（ランダムな敵対対象）
-            const targets = allFighters.filter(f => f.isPlayer !== current.isPlayer && f.currentHp > 0);
-            const target = targets[Math.floor(Math.random() * targets.length)];
-
-            // ダメージ計算
-            if (chosenCmd.pow > 0) {
-                playSound('attack');
-                const damage = Math.floor(current.atk * chosenCmd.pow * (0.8 + Math.random() * 0.4));
-                target.currentHp -= damage;
-                msg(`${current.name}の ${chosenCmd.name}！\n${target.name}に ${damage} ダメージ！`);
-                playSound('damage');
             } else {
-                msg(`${current.name}の ${chosenCmd.name}！\nしかし なにもおきなかった！`);
-            }
-
-            renderBattleField();
-
-            setTimeout(executeNextTurn, 1500);
-        };
-
-        executeNextTurn();
-    }
-
-    function playRoulette(cmds) {
-        return new Promise(resolve => {
-            let ticks = 0;
-            const maxTicks = 15;
-            const interval = setInterval(() => {
-                const randomCmd = cmds[Math.floor(Math.random() * cmds.length)];
-                msgRoulette(`▶ ${randomCmd.name} ◀`);
-                playSound('roulette');
-                ticks++;
-                if (ticks >= maxTicks) {
-                    clearInterval(interval);
-                    // 最終決定
-                    const finalCmd = cmds[Math.floor(Math.random() * cmds.length)];
-                    msgRoulette(`★ ${finalCmd.name} ★`);
-                    setTimeout(() => resolve(finalCmd), 500);
+                this.state = 'MOVE';
+                let dir = this.target.pos.sub(this.pos).normalize();
+                
+                // 簡易的なレーン追従と衝突回避 (Boids/Steering behaviorの基礎)
+                let separation = new Vec2(0,0);
+                for(let other of game.units) {
+                    if(other !== this && other.active) {
+                        let d = this.pos.dist(other.pos);
+                        if(d < this.radius + other.radius) {
+                            let repel = this.pos.sub(other.pos).normalize().mult(0.5);
+                            separation = separation.add(repel);
+                        }
+                    }
                 }
-            }, 80);
+                dir = dir.add(separation).normalize();
+                this.pos = this.pos.add(dir.mult(this.speed * dt));
+            }
+        } else {
+             // ターゲットが居ない場合は敵陣(上か下)へ向かう
+             let moveDir = this.team === 0 ? -1 : 1;
+             this.pos.y += moveDir * this.speed * dt;
+        }
+    }
+    findClosestEnemy(game) {
+        let closest = null;
+        let minDist = Infinity;
+        let enemies = [].concat(game.units, game.towers).filter(e => e.team !== this.team && e.active);
+        for (let e of enemies) {
+            let d = this.pos.dist(e.pos);
+            if (d < minDist) { minDist = d; closest = e; }
+        }
+        return closest;
+    }
+    draw(ctx) {
+        ctx.fillStyle = this.team === 0 ? '#64b5f6' : '#e57373';
+        if(this.team === 0) {
+             ctx.fillStyle = this.color; // 味方のみ個別の色を反映
+        }
+        
+        ctx.beginPath();
+        ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = this.team === 0 ? '#0d47a1' : '#b71c1c';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 攻撃モーションの簡易エフェクト
+        if(this.state === 'ATTACK' && this.atkTimer > this.atkCooldown - 0.2) {
+            ctx.beginPath();
+            ctx.arc(this.pos.x, this.pos.y, this.radius + 3, 0, Math.PI * 2);
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+        }
+
+        // HPバー
+        const hpRatio = this.hp / this.maxHp;
+        ctx.fillStyle = 'red';
+        ctx.fillRect(this.pos.x - 10, this.pos.y - this.radius - 8, 20, 3);
+        ctx.fillStyle = '#00e676';
+        ctx.fillRect(this.pos.x - 10, this.pos.y - this.radius - 8, 20 * hpRatio, 3);
+    }
+}
+
+/**
+ * -------------------------------------------------------------
+ * 4. パーティクル＆エフェクトシステム
+ * -------------------------------------------------------------
+ */
+class ParticleSystem {
+    constructor() { this.particles = []; this.projectiles = []; }
+    addProjectile(start, target, team) {
+        this.projectiles.push({ pos: new Vec2(start.x, start.y), target: target, speed: 400, team: team, active: true });
+    }
+    update(dt) {
+        for(let p of this.projectiles) {
+            if(!p.target.active) { p.active = false; continue; }
+            let dir = p.target.pos.sub(p.pos).normalize();
+            p.pos = p.pos.add(dir.mult(p.speed * dt));
+            if(p.pos.dist(p.target.pos) < 10) { p.active = false; audio.playHit(); }
+        }
+        this.projectiles = this.projectiles.filter(p => p.active);
+    }
+    draw(ctx) {
+        for(let p of this.projectiles) {
+            ctx.fillStyle = p.team === 0 ? '#bbdefb' : '#ffcdd2';
+            ctx.beginPath();
+            ctx.arc(p.pos.x, p.pos.y, 4, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+}
+
+/**
+ * -------------------------------------------------------------
+ * 5. カード＆デッキロジック (TCG/デッキ構築型の概念を実装)
+ * -------------------------------------------------------------
+ */
+const CardDB = [
+    { id: 'knight', name: 'ナイト', cost: 3, hp: 800, damage: 80, speed: 60, range: 20, atkCooldown: 1.2, radius: 12, color: '#9e9e9e', count: 1 },
+    { id: 'archer', name: 'アーチャー', cost: 3, hp: 300, damage: 60, speed: 60, range: 120, atkCooldown: 1.0, radius: 10, color: '#8bc34a', count: 2 },
+    { id: 'giant', name: 'ジャイアント', cost: 5, hp: 2000, damage: 120, speed: 40, range: 25, atkCooldown: 2.0, radius: 18, color: '#ff9800', count: 1 },
+    { id: 'goblin', name: 'ゴブリン', cost: 2, hp: 200, damage: 50, speed: 90, range: 15, atkCooldown: 0.8, radius: 8, color: '#4caf50', count: 3 }
+];
+
+class Player {
+    constructor(isCPU = false) {
+        this.isCPU = isCPU;
+        this.elixir = 5;
+        this.maxElixir = 10;
+        this.elixirRate = 1.0; // 1 elixir per second
+        
+        // TCGライクなデッキ循環システム
+        this.deck = [...CardDB, ...CardDB]; // 8 cards mock deck
+        this.shuffleDeck();
+        this.hand = [];
+        this.nextCard = null;
+        for(let i=0; i<4; i++) this.drawCard();
+        this.drawCardToNext();
+        
+        // CPU用AI用変数
+        this.cpuTimer = 0;
+    }
+    shuffleDeck() {
+        for (let i = this.deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+        }
+    }
+    drawCard() {
+        if (this.deck.length === 0) return; // 本来は捨て札をシャッフルして再構築するロジックが必要
+        this.hand.push(this.deck.pop());
+    }
+    drawCardToNext() {
+        if(this.deck.length > 0) {
+            this.nextCard = this.deck.pop();
+        } else {
+            // Deck Cycle Logic (無限ループデッキ)
+            this.deck = [...CardDB, ...CardDB];
+            this.shuffleDeck();
+            this.nextCard = this.deck.pop();
+        }
+    }
+    useCard(index) {
+        let card = this.hand[index];
+        if (this.elixir >= card.cost) {
+            this.elixir -= card.cost;
+            this.hand.splice(index, 1);
+            this.hand.push(this.nextCard);
+            this.drawCardToNext();
+            return card;
+        }
+        return null;
+    }
+    update(dt, game) {
+        if (this.elixir < this.maxElixir) {
+            this.elixir += this.elixirRate * dt;
+            if(this.elixir >= this.maxElixir && !this.isCPU && Math.floor(this.elixir - this.elixirRate * dt) < 10) {
+                audio.playElixirMax();
+            }
+        }
+        
+        // カスタムCPU AIロジック (コストが溜まったらランダムなレーンにユニットを配置)
+        if (this.isCPU) {
+            this.cpuTimer += dt;
+            if (this.cpuTimer > 3.0) { // 3秒ごとに判断
+                let playableIdx = this.hand.findIndex(c => c.cost <= this.elixir);
+                if (playableIdx !== -1 && Math.random() > 0.3) {
+                    let card = this.useCard(playableIdx);
+                    let spawnX = Math.random() > 0.5 ? 100 : 300; // 左レーンか右レーン
+                    let spawnY = 150; // 敵陣
+                    for(let i=0; i<card.count; i++) {
+                         let offset = new Vec2(Utils.randomRange(-15,15), Utils.randomRange(-15,15));
+                         game.spawnUnit(spawnX + offset.x, spawnY + offset.y, 1, card);
+                    }
+                    audio.playSpawn();
+                }
+                this.cpuTimer = 0;
+            }
+        }
+    }
+}
+
+/**
+ * -------------------------------------------------------------
+ * 6. メインゲームエンジン (State, Loop, Render)
+ * -------------------------------------------------------------
+ */
+class GameEngine {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+        
+        this.lastTime = performance.now();
+        this.state = 'START'; // START, PLAY, OVER
+        this.particles = new ParticleSystem();
+        
+        this.towers = [];
+        this.units = [];
+        this.player = new Player(false);
+        this.enemy = new Player(true);
+        
+        this.selectedCardIndex = -1;
+        this.setupTowers();
+        this.setupUI();
+        this.bindEvents();
+    }
+    
+    setupTowers() {
+        // Player Towers (Bottom)
+        this.towers.push(new Tower(this.width / 2, this.height - 50, 0, true)); // King
+        this.towers.push(new Tower(80, this.height - 150, 0, false)); // Princess L
+        this.towers.push(new Tower(this.width - 80, this.height - 150, 0, false)); // Princess R
+        
+        // Enemy Towers (Top)
+        this.towers.push(new Tower(this.width / 2, 50, 1, true)); // King
+        this.towers.push(new Tower(80, 150, 1, false)); // Princess L
+        this.towers.push(new Tower(this.width - 80, 150, 1, false)); // Princess R
+    }
+
+    setupUI() {
+        this.cardsContainer = document.getElementById('cards-container');
+        this.renderHandUI();
+    }
+
+    renderHandUI() {
+        this.cardsContainer.innerHTML = '';
+        this.player.hand.forEach((card, idx) => {
+            let div = document.createElement('div');
+            div.className = `card ${this.player.elixir >= card.cost ? '' : 'disabled'} ${this.selectedCardIndex === idx ? 'active' : ''}`;
+            div.innerHTML = `<div class="card-cost">${card.cost}</div><div style="font-size:10px;text-align:center;">${card.name}</div>`;
+            div.onclick = () => {
+                if (this.player.elixir >= card.cost) {
+                    this.selectedCardIndex = idx;
+                    this.renderHandUI();
+                }
+            };
+            this.cardsContainer.appendChild(div);
         });
+        
+        // Next Card Display
+        let nextDiv = document.createElement('div');
+        nextDiv.style = "width:40px; height:60px; background:#555; border-radius:5px; margin-left:10px; position:relative; display:flex; align-items:center; justify-content:center; font-size:8px; opacity:0.7;";
+        nextDiv.innerHTML = `NEXT<br>${this.player.nextCard.name}`;
+        this.cardsContainer.appendChild(nextDiv);
     }
 
-    function showResult(isWin) {
-        if (isWin) playSound('win');
-        document.getElementById('result-title').innerText = isWin ? "YOU WIN!!" : "GAME OVER...";
-        document.getElementById('result-title').style.color = isWin ? "#0f0" : "#f00";
-        switchScreen('screen-result');
+    bindEvents() {
+        this.canvas.addEventListener('mousedown', (e) => this.handleDeploy(e));
+        this.canvas.addEventListener('touchstart', (e) => { e.preventDefault(); this.handleDeploy(e.touches[0]); });
     }
 
-    function resetGame() { switchScreen('screen-title'); }
+    handleDeploy(e) {
+        if (this.state !== 'PLAY' || this.selectedCardIndex === -1) return;
+        
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        // 自陣のみ配置可能とする制御 (Y > half)
+        if (y < this.height / 2) return;
+
+        let card = this.player.useCard(this.selectedCardIndex);
+        if (card) {
+            audio.playSpawn();
+            for(let i=0; i<card.count; i++) {
+                // 複数体湧きの位置オフセット
+                let offset = new Vec2(Utils.randomRange(-15,15), Utils.randomRange(-15,15));
+                this.spawnUnit(x + offset.x, y + offset.y, 0, card);
+            }
+            this.selectedCardIndex = -1;
+            this.renderHandUI();
+        }
+    }
+
+    spawnUnit(x, y, team, typeData) {
+        this.units.push(new Unit(x, y, team, typeData));
+    }
+
+    update(dt) {
+        if(this.state !== 'PLAY') return;
+
+        this.player.update(dt, this);
+        this.enemy.update(dt, this);
+        
+        // Update UI Elixir
+        document.getElementById('elixir-bar').style.width = `${(this.player.elixir / this.player.maxElixir) * 100}%`;
+        document.getElementById('elixir-text').innerText = `${Math.floor(this.player.elixir)} / ${this.player.maxElixir}`;
+        
+        // Real-time UI refresh for card availability
+        this.renderHandUI();
+
+        this.towers.forEach(t => t.update(dt, this));
+        this.units.forEach(u => u.update(dt, this));
+        this.particles.update(dt);
+
+        // Remove dead entities
+        let towerCount = this.towers.length;
+        this.towers = this.towers.filter(t => t.active);
+        if(this.towers.length < towerCount) {
+             audio.playTowerDestroy();
+             this.checkWinCondition();
+        }
+        
+        this.units = this.units.filter(u => u.active);
+    }
+    
+    checkWinCondition() {
+        let pKing = this.towers.find(t => t.team === 0 && t.isKing);
+        let eKing = this.towers.find(t => t.team === 1 && t.isKing);
+        
+        if(!pKing) this.gameOver("LOSE...");
+        else if(!eKing) this.gameOver("WIN!!");
+    }
+    
+    gameOver(msg) {
+        this.state = 'OVER';
+        let overlay = document.getElementById('overlay');
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `<h1 style="color:#ffeb3b; font-size:40px;">${msg}</h1><button onclick="location.reload()">RETRY</button>`;
+    }
+
+    draw() {
+        // Background / Field
+        this.ctx.fillStyle = '#4caf50';
+        this.ctx.fillRect(0, 0, this.width, this.height);
+        
+        // 川 (River) と 橋 (Bridges)
+        this.ctx.fillStyle = '#2196f3';
+        this.ctx.fillRect(0, this.height/2 - 20, this.width, 40);
+        this.ctx.fillStyle = '#795548'; // 橋
+        this.ctx.fillRect(60, this.height/2 - 20, 40, 40);
+        this.ctx.fillRect(this.width - 100, this.height/2 - 20, 40, 40);
+
+        this.towers.forEach(t => t.draw(this.ctx));
+        this.units.forEach(u => u.draw(this.ctx));
+        this.particles.draw(this.ctx);
+        
+        // 選択中のカード配置プレビュー
+        if(this.selectedCardIndex !== -1) {
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            this.ctx.fillRect(0, this.height/2, this.width, this.height/2); // 配置可能エリアハイライト
+        }
+    }
+
+    loop(timestamp) {
+        const dt = (timestamp - this.lastTime) / 1000;
+        this.lastTime = timestamp;
+        
+        // デルタタイムの上限設定 (タブ非アクティブ時のバグ防止)
+        if(dt < 0.1) {
+            this.update(dt);
+            this.draw();
+        }
+        requestAnimationFrame((ts) => this.loop(ts));
+    }
+}
+
+// 起動シーケンス
+document.getElementById('start-btn').addEventListener('click', () => {
+    audio.init();
+    document.getElementById('overlay').style.display = 'none';
+    const game = new GameEngine();
+    game.state = 'PLAY';
+    requestAnimationFrame((ts) => {
+        game.lastTime = ts;
+        game.loop(ts);
+    });
+});
+
 </script>
-
 </body>
 </html>
