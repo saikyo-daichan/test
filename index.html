@@ -3,26 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>パジェロルーレット風ゲーム</title>
+    <title>無限コインドロップ・ルーレット</title>
     <style>
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #222;
+            background-color: #1a1a2e;
             color: #fff;
             font-family: 'Arial', sans-serif;
-            margin-top: 50px;
+            margin: 0;
+            padding-top: 30px;
         }
         h1 {
-            color: #ffd700;
+            color: #ffcc00;
             text-shadow: 2px 2px 4px #000;
+            margin-bottom: 5px;
+        }
+        #coin-board {
+            background-color: #16213e;
+            padding: 10px 30px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ffcc;
+            border: 2px solid #0f3460;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         #roulette-container {
             position: relative;
-            margin: 20px;
+            margin: 10px;
         }
-        /* ルーレットの針（ダーツの代わり） */
         #pointer {
             position: absolute;
             top: -15px;
@@ -34,65 +46,69 @@
             border-right: 15px solid transparent;
             border-top: 30px solid #ff3333;
             z-index: 10;
-            filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.5));
+            filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.6));
         }
         canvas {
             border-radius: 50%;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.4);
             background-color: #fff;
         }
         .controls {
-            margin-top: 30px;
+            margin-top: 25px;
         }
         button {
-            padding: 15px 40px;
-            font-size: 20px;
+            padding: 15px 30px;
+            font-size: 18px;
             font-weight: bold;
             margin: 0 10px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
             transition: 0.2s;
         }
         button:active {
             transform: translateY(4px);
-            box-shadow: 0 0px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 0px 2px rgba(0,0,0,0.4);
         }
         #start-btn {
-            background-color: #4CAF50;
+            background-color: #e94560;
             color: white;
         }
         #stop-btn {
-            background-color: #f44336;
+            background-color: #0f3460;
             color: white;
         }
         button:disabled {
-            background-color: #777 !important;
+            background-color: #555 !important;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
         #result {
             margin-top: 20px;
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
-            color: #ffd700;
-            min-height: 40px;
+            color: #ffcc00;
+            text-align: center;
+            min-height: 60px;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
-    <h1>ビッグチャンス！ダーツルーレット</h1>
+    <h1>無限ルーレット チャンス！</h1>
+    <div id="coin-board">所持コイン: <span id="coin-count">1000</span></div>
 
     <div id="roulette-container">
         <div id="pointer"></div>
-        <canvas id="rouletteCanvas" width="400" height="400"></canvas>
+        <canvas id="rouletteCanvas" width="350" height="350"></canvas>
     </div>
 
     <div class="controls">
-        <button id="start-btn">回転スタート！</button>
-        <button id="stop-btn" disabled>ダーツを投げる！</button>
+        <button id="start-btn">100コインでスタート</button>
+        <button id="stop-btn" disabled>ストップ！</button>
     </div>
 
     <div id="result"></div>
@@ -103,26 +119,41 @@
         const startBtn = document.getElementById('start-btn');
         const stopBtn = document.getElementById('stop-btn');
         const resultDisplay = document.getElementById('result');
+        const coinCountDisplay = document.getElementById('coin-count');
 
-        // 賞品リスト（色とテキスト）
+        let totalCoins = 1000; // 初期コイン
+        const PLAY_COST = 100;
+
+        // 盤面定義（確率と面積を一致させるため4分割）
         const prizes = [
-            { text: "パジェロ!!", color: "#FFD700" }, // ゴールド
-            { text: "たわし", color: "#8B4513" }, // 茶色
-            { text: "ハワイ旅行", color: "#00BFFF" }, // ブルー
-            { text: "たわし", color: "#8B4513" },
-            { text: "高級和牛", color: "#FF4500" }, // レッド
-            { text: "たわし", color: "#8B4513" },
-            { text: "パジェロ!!", color: "#FFD700" },
-            { text: "たわし", color: "#8B4513" }
+            { text: "50コイン", color: "#FFD700" }, // 0: ゴールド
+            { text: "25コイン", color: "#00BFFF" }, // 1: ブルー
+            { text: "失敗", color: "#8B4513" },   // 2: ブラウン
+            { text: "25コイン", color: "#00BFFF" }  // 3: ブルー
         ];
 
         const numPrizes = prizes.length;
-        const arc = Math.PI * 2 / numPrizes; // 1マスの角度
-        let currentAngle = 0; // 現在の回転角度
-        let spinSpeed = 0; // 回転スピード
+        const arc = Math.PI * 2 / numPrizes; // 1マスの角度 (90度)
+        
+        let currentAngle = 0;
         let isSpinning = false;
-        let isStopping = false;
-        let animationId;
+        let isDecelerating = false; // 減速中フラグ
+        let animationStartTime = 0;
+        let startAngle = 0;
+        let targetAngle = 0;
+        
+        const SPIN_SPEED = 0.15; // 定速回転時のスピード
+        const DURATION = 3500; // ストップボタンを押してから止まるまでの時間(ミリ秒)
+
+        // イージング関数（滑らかに減速してピタッと止まる計算）
+        function easeOutQuart(x) {
+            return 1 - Math.pow(1 - x, 4);
+        }
+
+        // コイン表示更新
+        function updateCoinDisplay() {
+            coinCountDisplay.innerText = totalCoins;
+        }
 
         // ルーレットを描画する関数
         function drawRoulette() {
@@ -148,9 +179,9 @@
                 ctx.translate(centerX, centerY);
                 ctx.rotate(angle + arc / 2);
                 ctx.textAlign = "right";
-                ctx.fillStyle = prizes[i].color === "#8B4513" ? "#FFF" : "#000"; // 背景色に合わせて文字色変更
-                ctx.font = "bold 20px sans-serif";
-                ctx.fillText(prizes[i].text, radius - 20, 10);
+                ctx.fillStyle = prizes[i].color === "#8B4513" ? "#FFF" : "#000";
+                ctx.font = "bold 26px sans-serif";
+                ctx.fillText(prizes[i].text, radius - 30, 8);
                 ctx.restore();
             }
         }
@@ -158,75 +189,128 @@
         // 回転アニメーション
         function animate() {
             if (isSpinning) {
-                currentAngle += spinSpeed;
-                
-                // 停止処理
-                if (isStopping) {
-                    spinSpeed *= 0.985; // 徐々に減速
-                    if (spinSpeed < 0.002) {
+                if (!isDecelerating) {
+                    // 通常の回転
+                    currentAngle += SPIN_SPEED;
+                    drawRoulette();
+                    requestAnimationFrame(animate);
+                } else {
+                    // 減速中の回転（目標の角度へ向かう）
+                    let elapsed = Date.now() - animationStartTime;
+                    let progress = Math.min(elapsed / DURATION, 1);
+                    
+                    let ease = easeOutQuart(progress);
+                    currentAngle = startAngle + (targetAngle - startAngle) * ease;
+                    
+                    drawRoulette();
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        // 完全に停止
                         isSpinning = false;
-                        isStopping = false;
-                        spinSpeed = 0;
+                        isDecelerating = false;
                         determineResult();
                     }
                 }
-
-                drawRoulette();
-                animationId = requestAnimationFrame(animate);
             }
         }
 
-        // 結果を判定する関数
+        // スピン開始処理（isInitial: true=初回100消費, false=継続消費なし）
+        function startSpin(isInitial) {
+            if (isInitial) {
+                if (totalCoins < PLAY_COST) {
+                    alert("コインが足りません！");
+                    return;
+                }
+                totalCoins -= PLAY_COST;
+                updateCoinDisplay();
+                resultDisplay.innerHTML = "ルーレット回転中...<br><span style='font-size:18px; color:#aaa;'>好きなタイミングでストップ！</span>";
+            } else {
+                resultDisplay.innerHTML = "連続プレイ中！<br><span style='font-size:18px; color:#aaa;'>好きなタイミングでストップ！</span>";
+            }
+            
+            resultDisplay.style.color = "#fff";
+            isSpinning = true;
+            isDecelerating = false;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            
+            animate();
+        }
+
+        // ストップ（目押し不能・内部抽選ロジック）
+        stopBtn.addEventListener('click', () => {
+            if (isSpinning && !isDecelerating) {
+                isDecelerating = true;
+                stopBtn.disabled = true;
+
+                // 【ここで内部抽選】
+                let r = Math.random();
+                let targetIndex;
+                if (r < 0.25) {
+                    targetIndex = 2; // 25% 失敗マス
+                } else if (r < 0.75) {
+                    targetIndex = Math.random() < 0.5 ? 1 : 3; // 50% 25コインマス（2箇所あるのでランダムに散らす）
+                } else {
+                    targetIndex = 0; // 25% 50コインマス
+                }
+
+                // 決定したマスが真上(270度)に来るための角度を逆算
+                let baseTargetAngle = (Math.PI * 1.5 - (targetIndex * arc + arc / 2)) % (Math.PI * 2);
+                if (baseTargetAngle < 0) baseTargetAngle += Math.PI * 2;
+                
+                // 現在の角度から目標角度までの差分を計算
+                let currentMod = currentAngle % (Math.PI * 2);
+                let diff = baseTargetAngle - currentMod;
+                if (diff < 0) diff += Math.PI * 2;
+                
+                // すぐ止まると不自然なので、さらに3回転（Math.PI * 2 * 3）させてから止める
+                startAngle = currentAngle;
+                targetAngle = currentAngle + diff + (Math.PI * 2 * 3);
+                animationStartTime = Date.now();
+            }
+        });
+
+        // 結果発表と継続判定
         function determineResult() {
-            // 真上（270度 = 3π/2）に来ている項目を計算
-            // 角度を0〜2πの範囲に正規化
+            // 真上にきているマスを取得
             let normalizedAngle = currentAngle % (Math.PI * 2);
             if (normalizedAngle < 0) normalizedAngle += Math.PI * 2;
-
-            // 針の位置は上（270度の位置なので、ルーレットの回転分を逆算）
             let pointerAngle = (Math.PI * 1.5 - normalizedAngle + Math.PI * 2) % (Math.PI * 2);
             let winningIndex = Math.floor(pointerAngle / arc);
-
-            const prize = prizes[winningIndex].text;
             
-            if(prize === "パジェロ!!") {
-                resultDisplay.innerHTML = "🎉 大当たり！！「" + prize + "」獲得！！ 🎉";
-                resultDisplay.style.color = "#FFD700";
-            } else if (prize === "たわし") {
-                resultDisplay.innerHTML = "残念...「" + prize + "」です。";
-                resultDisplay.style.color = "#aaa";
+            const prize = prizes[winningIndex];
+            
+            if (prize.text === "失敗") {
+                resultDisplay.innerHTML = "😭 失敗...<br><span style='font-size:18px;'>連続プレイ終了。</span>";
+                resultDisplay.style.color = "#ff4444";
+                startBtn.disabled = false; // 最初からやり直し可能に
             } else {
-                resultDisplay.innerHTML = "おめでとうございます！「" + prize + "」獲得！";
-                resultDisplay.style.color = "#00BFFF";
+                let addCoins = parseInt(prize.text);
+                totalCoins += addCoins;
+                updateCoinDisplay();
+                
+                resultDisplay.innerHTML = `🎉 ${prize.text} 獲得！<br><span style='font-size:18px;'>もう1回転スタートします...</span>`;
+                resultDisplay.style.color = "#FFD700";
+                
+                // 1.5秒後に自動で次の回転をスタート
+                setTimeout(() => {
+                    startSpin(false); 
+                }, 1500);
             }
-
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
         }
-
-        // スタートボタン
-        startBtn.addEventListener('click', () => {
-            if (!isSpinning) {
-                isSpinning = true;
-                isStopping = false;
-                spinSpeed = 0.2 + Math.random() * 0.1; // 初速を少しランダムに
-                resultDisplay.innerHTML = "";
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                animate();
-            }
-        });
-
-        // ストップ（ダーツ投擲）ボタン
-        stopBtn.addEventListener('click', () => {
-            if (isSpinning && !isStopping) {
-                isStopping = true;
-                stopBtn.disabled = true; // 何度も押せないようにする
-            }
-        });
 
         // 初期描画
         drawRoulette();
+        updateCoinDisplay();
+
+        // 最初のスタートボタン
+        startBtn.addEventListener('click', () => {
+            if (!isSpinning) {
+                startSpin(true);
+            }
+        });
     </script>
 </body>
 </html>
