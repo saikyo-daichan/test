@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Sweet Fruit Bonanza - Perfect Balance</title>
+<title>Sweet Fruit Bonanza - Ultimate Balance</title>
 <style>
     :root {
         --primary: #ff007f;
@@ -60,15 +60,15 @@
         display: flex;
         justify-content: space-between;
         width: 100%;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         gap: 10px;
     }
     .info-box {
         background: linear-gradient(135deg, #2c3e50, #000000);
-        padding: 10px 15px;
+        padding: 8px 12px;
         border-radius: 10px;
         border: 2px solid var(--secondary);
-        font-size: 20px;
+        font-size: 18px;
         font-weight: bold;
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         text-shadow: 0 2px 4px rgba(0,0,0,0.8);
@@ -131,11 +131,33 @@
         filter: brightness(2) contrast(2);
     }
     
+    /* 当該スピンのリアルタイム獲得表示バー */
+    #current-spin-bar {
+        display: none;
+        width: 100%;
+        text-align: center;
+        background: linear-gradient(90deg, #1a0b2e, #4a00e0, #1a0b2e);
+        color: #fff;
+        padding: 10px 0;
+        border-radius: 10px;
+        font-size: 22px;
+        font-weight: 900;
+        margin-top: 15px;
+        box-shadow: 0 0 15px #4a00e0;
+        border: 2px solid #00e5ff;
+        text-shadow: 0 2px 5px #000;
+        animation: slideDown 0.3s ease-out;
+    }
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
     #controls {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-top: 20px;
+        margin-top: 15px;
         align-items: center;
         width: 100%;
         justify-content: center;
@@ -217,7 +239,7 @@
 <div id="game-wrapper">
     <div id="header-ui">
         <div class="info-box">💰 <span id="balance">1,000,000</span></div>
-        <div class="info-box">WIN🏆 <span id="win-amount">0</span></div>
+        <div class="info-box">TOTAL 🏆 <span id="win-amount">0</span></div>
     </div>
     
     <div id="board-container">
@@ -225,6 +247,9 @@
         <div id="board"></div>
         <div id="overlay-msg"></div>
     </div>
+
+    <!-- 当該スピンのリアルタイム獲得バー -->
+    <div id="current-spin-bar"></div>
 
     <div id="controls">
         <div class="bet-controls">
@@ -251,6 +276,8 @@ for(let i=1; i<=100; i++) {
     if(i*10000 >= 10000) betLevels.push(i*10000);
 }
 
+// 調整1: シンボルを9種類から8種類へ削減（揃いやすさ激増）
+// レモン(id:9)を削除し、ウェイトを再分配
 const SYMBOL_DATA = {
     1: { icon: '🍎', pays: [2, 5, 10], weight: 40 },
     2: { icon: '🍇', pays: [1.5, 4, 8], weight: 50 },
@@ -259,21 +286,21 @@ const SYMBOL_DATA = {
     5: { icon: '🍒', pays: [0.8, 1.5, 3], weight: 80 },
     6: { icon: '🍓', pays: [0.5, 1.2, 2], weight: 90 },
     7: { icon: '🍊', pays: [0.4, 0.9, 1.5], weight: 100 },
-    8: { icon: '🍍', pays: [0.3, 0.8, 1.2], weight: 110 },
-    9: { icon: '🍋', pays: [0.25, 0.75, 1], weight: 120 }
+    8: { icon: '🍍', pays: [0.3, 0.8, 1.2], weight: 120 }
 };
 const SCATTER = { id: 99, icon: '🍭', weight: 4 }; 
 const BOMB = { id: 100, icon: '💣' };
 
-// 兄貴のバランス調整：機械割を保つための重み付けボム倍率配列
-// 低倍率が出やすく、100倍などはロマン枠として設定
+// 調整2: ボムの倍率配分（中倍率を厚くし、安定してデカい配当が出やすく）
 const BOMB_MULTIPLIERS = [
-    2, 2, 2, 2, 2, 2, 2, 2, 
-    3, 3, 3, 3, 3, 3, 
-    4, 4, 4, 4, 
-    5, 5, 5, 
-    8, 8, 
-    10, 15, 20, 25, 50, 100
+    2, 2, 2, 
+    3, 3, 3, 
+    4, 4, 4, 
+    5, 5, 5, 5, 
+    8, 8, 8, 
+    10, 10, 10, 
+    15, 15, 
+    20, 25, 50, 100
 ];
 
 let symbolPool = [];
@@ -289,7 +316,7 @@ let state = {
     isSpinning: false,
     freeSpins: 0,
     isFreeSpinMode: false,
-    currentWin: 0,
+    spinWin: 0, // 当該スピンの獲得（リアルタイム更新用）
     totalWin: 0,
     fsAccumulatedWin: 0, 
     board: [], 
@@ -461,6 +488,7 @@ const betDownBtn = document.getElementById('bet-down');
 const overlayMsg = document.getElementById('overlay-msg');
 const fsCounter = document.getElementById('fs-counter');
 const fsLeftEl = document.getElementById('fs-left');
+const currentSpinBar = document.getElementById('current-spin-bar');
 
 function formatCurrency(num) { return num.toLocaleString('en-US'); }
 
@@ -483,6 +511,20 @@ function updateUI() {
     } else {
         fsCounter.style.display = 'none';
     }
+}
+
+function showCurrentSpinWin(amount, isBomb = false, bombMult = 1, finalAmount = 0) {
+    currentSpinBar.style.display = 'block';
+    if(isBomb) {
+        currentSpinBar.innerHTML = `WIN: ${formatCurrency(amount)} <span style="color:#00ffff;">x${bombMult}</span> = <span style="color:#ffd700;">${formatCurrency(finalAmount)}</span>`;
+    } else {
+        currentSpinBar.innerHTML = `SPIN WIN: <span style="color:#ffd700;">${formatCurrency(amount)}</span>`;
+    }
+}
+
+function hideCurrentSpinWin() {
+    currentSpinBar.style.display = 'none';
+    currentSpinBar.innerHTML = '';
 }
 
 betUpBtn.onclick = () => { AudioEngine.init(); if(state.betIndex < betLevels.length-1) { state.betIndex++; state.bet = betLevels[state.betIndex]; updateUI(); }};
@@ -508,8 +550,8 @@ function getPos(col, row) {
 }
 
 function getRandomSymbol() {
-    // 兄貴のバランス調整：FS中は約4%（1回の落下で盤面に約1.2個）、通常時は0.8%
-    let bombChance = state.isFreeSpinMode ? 0.04 : 0.008;
+    // FS中は約5%、通常時は0.8%
+    let bombChance = state.isFreeSpinMode ? 0.05 : 0.008;
     if(Math.random() < bombChance) {
         let mult = BOMB_MULTIPLIERS[Math.floor(Math.random() * BOMB_MULTIPLIERS.length)];
         return { id: BOMB.id, icon: BOMB.icon, mult: mult };
@@ -621,7 +663,10 @@ async function processCascade() {
     let matchData = findMatches();
     if(matchData.cells.length === 0) return false; 
     
-    state.currentWin += matchData.win;
+    // リアルタイムに当該スピンの獲得を加算・表示
+    state.spinWin += matchData.win;
+    showCurrentSpinWin(state.spinWin);
+    
     AudioEngine.playMatch();
     
     matchData.cells.forEach(cell => {
@@ -685,7 +730,7 @@ async function processCascade() {
 }
 
 async function processBombs() {
-    if(state.currentWin === 0) return; 
+    if(state.spinWin === 0) return; 
     
     let bombs = [];
     for(let c=0; c<COLS; c++) {
@@ -709,8 +754,10 @@ async function processBombs() {
             await sleep(500);
         }
         
-        await showMessage(`MULTIPLIER<br>x${totalMultiplier}!`, 1500);
-        state.currentWin *= totalMultiplier;
+        let finalAmount = state.spinWin * totalMultiplier;
+        showCurrentSpinWin(state.spinWin, true, totalMultiplier, finalAmount);
+        state.spinWin = finalAmount;
+        await sleep(1500); // プレイヤーに倍率計算の結果をしっかり見せる
     }
 }
 
@@ -737,7 +784,8 @@ async function checkFreeSpins(scattersCount) {
 }
 
 async function playSpinRound(forceScatters = false) {
-    state.currentWin = 0;
+    state.spinWin = 0;
+    hideCurrentSpinWin();
     
     await generateInitialBoard(forceScatters);
     
@@ -748,21 +796,27 @@ async function playSpinRound(forceScatters = false) {
     
     await processBombs();
     
-    if(state.currentWin > 0) {
-        state.totalWin += state.currentWin;
+    if(state.spinWin > 0) {
+        state.totalWin += state.spinWin;
         winEl.textContent = formatCurrency(state.totalWin);
         
         if (state.isFreeSpinMode && !forceScatters) {
-            state.fsAccumulatedWin += state.currentWin;
+            state.fsAccumulatedWin += state.spinWin;
         } else {
-            state.balance += state.currentWin;
+            state.balance += state.spinWin;
         }
         
-        if(state.currentWin >= state.bet * 10) {
+        // 調整4: ポップアップ通知はベット額の10倍以上（BIG WIN）の時だけ出す
+        let isBigWin = state.spinWin >= state.bet * 10;
+        
+        if(isBigWin) {
             spawnCoinShower();
-            await showMessage(`BIG WIN!<br>${formatCurrency(state.currentWin)}`, 3000);
+            await showMessage(`BIG WIN!<br>${formatCurrency(state.spinWin)}`, 2500);
         } else {
-            await showMessage(`WIN<br>${formatCurrency(state.currentWin)}`, 1000);
+            // フリースピン中はショボWin報告をカット（サクサク進む）
+            if (!state.isFreeSpinMode) {
+                await showMessage(`WIN<br>${formatCurrency(state.spinWin)}`, 1000);
+            }
         }
     }
     
@@ -780,6 +834,7 @@ async function playSpinRound(forceScatters = false) {
     }
     
     updateUI();
+    hideCurrentSpinWin(); // スピン終了時にバーを隠す
 }
 
 async function startSpin(isBuy = false) {
@@ -812,7 +867,7 @@ async function startSpin(isBuy = false) {
         await playSpinRound(false);
         
         if(state.isFreeSpinMode && state.freeSpins > 0) {
-            await sleep(1000); 
+            await sleep(800); // テンポアップ
         }
     }
     
