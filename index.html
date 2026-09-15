@@ -2,8 +2,14 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<!-- スマホアプリ化（PWA）のためのメタタグ群 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Sweet Fruit Bonanza - Ultimate Balance</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a0b2e">
+<!-- オフライン起動用の簡易マニフェスト -->
+<link rel="manifest" href='data:application/manifest+json;utf8,{"name":"Sweet Fruit Bonanza","short_name":"Bonanza","display":"standalone","start_url":".","background_color":"#1a0b2e","theme_color":"#ff007f"}'>
+<title>Sweet Fruit Bonanza - Offline App</title>
 <style>
     :root {
         --primary: #ff007f;
@@ -30,6 +36,7 @@
         height: 100vh;
         user-select: none;
         touch-action: none;
+        -webkit-touch-callout: none; /* 長押し防止 */
     }
     @keyframes gradientBG {
         0% { background-position: 0% 50%; }
@@ -131,7 +138,6 @@
         filter: brightness(2) contrast(2);
     }
     
-    /* 当該スピンのリアルタイム獲得表示バー */
     #current-spin-bar {
         display: none;
         width: 100%;
@@ -248,7 +254,6 @@
         <div id="overlay-msg"></div>
     </div>
 
-    <!-- 当該スピンのリアルタイム獲得バー -->
     <div id="current-spin-bar"></div>
 
     <div id="controls">
@@ -263,6 +268,51 @@
 </div>
 
 <script>
+/**
+ * ----------------------------------------------------
+ * SERVICE WORKER (OFFLINE SUPPORT)
+ * ----------------------------------------------------
+ * 1つのHTMLファイル単体でオフライン動作させるためのインラインワーカー登録
+ */
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        // 現在のURL（クエリパラメータ等を省いたもの）をキャッシュ対象にする
+        const pageUrl = window.location.href.split('?')[0].split('#')[0];
+        const swContent = `
+            const CACHE_NAME = 'sweet-fruit-bonanza-offline-v1';
+            const urlsToCache = [ '${pageUrl}' ];
+            
+            self.addEventListener('install', event => {
+                event.waitUntil(
+                    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+                );
+            });
+            
+            self.addEventListener('fetch', event => {
+                event.respondWith(
+                    caches.match(event.request).then(response => {
+                        return response || fetch(event.request);
+                    })
+                );
+            });
+        `;
+        // Blobを使って仮想的なsw.jsファイルを生成して登録
+        const blob = new Blob([swContent], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        
+        navigator.serviceWorker.register(swUrl).then(registration => {
+            console.log('Offline mode activated! (ServiceWorker registered)');
+        }).catch(err => {
+            console.log('Offline mode setup failed: ', err);
+        });
+    });
+}
+
+/**
+ * ----------------------------------------------------
+ * GAME LOGIC & SAVE SYSTEM
+ * ----------------------------------------------------
+ */
 const ROWS = 5;
 const COLS = 6;
 const CELL_SIZE = 80;
@@ -276,8 +326,6 @@ for(let i=1; i<=100; i++) {
     if(i*10000 >= 10000) betLevels.push(i*10000);
 }
 
-// 調整1: シンボルを9種類から8種類へ削減（揃いやすさ激増）
-// レモン(id:9)を削除し、ウェイトを再分配
 const SYMBOL_DATA = {
     1: { icon: '🍎', pays: [2, 5, 10], weight: 40 },
     2: { icon: '🍇', pays: [1.5, 4, 8], weight: 50 },
@@ -291,7 +339,6 @@ const SYMBOL_DATA = {
 const SCATTER = { id: 99, icon: '🍭', weight: 4 }; 
 const BOMB = { id: 100, icon: '💣' };
 
-// 調整2: ボムの倍率配分（中倍率を厚くし、安定してデカい配当が出やすく）
 const BOMB_MULTIPLIERS = [
     2, 2, 2, 
     3, 3, 3, 
@@ -309,19 +356,39 @@ for(let id in SYMBOL_DATA) {
 }
 for(let i=0; i<SCATTER.weight; i++) symbolPool.push(SCATTER.id);
 
+// セーブデータの読み込み
+let savedBalance = localStorage.getItem('sweet_bonanza_balance');
+
 let state = {
-    balance: 1000000,
+    balance: savedBalance !== null ? parseInt(savedBalance) : 1000000,
     betIndex: 0,
     bet: betLevels[0],
     isSpinning: false,
     freeSpins: 0,
     isFreeSpinMode: false,
-    spinWin: 0, // 当該スピンの獲得（リアルタイム更新用）
+    spinWin: 0, 
     totalWin: 0,
     fsAccumulatedWin: 0, 
     board: [], 
     audioInitialized: false
 };
+
+// セーブデータを保存する関数
+function saveGameData() {
+    localStorage.setItem('sweet_bonanza_balance', state.balance);
+}
+
+// 破産時の救済システム
+function checkRescue() {
+    if (!state.isSpinning && state.balance < 1000) {
+        setTimeout(async () => {
+            await showMessage("RESCUE BONUS!<br><span style='color:#00ff87'>+1,000,000</span>", 3000);
+            state.balance = 1000000;
+            saveGameData();
+            updateUI();
+        }, 1000);
+    }
+}
 
 let audioCtx;
 const AudioEngine = {
@@ -395,11 +462,9 @@ function resizeGame() {
     wrapper.style.transform = 'scale(1)'; 
     const width = wrapper.offsetWidth;
     const height = wrapper.offsetHeight;
-    
     const scaleX = window.innerWidth / (width + 20); 
     const scaleY = window.innerHeight / (height + 20); 
     const scale = Math.min(scaleX, scaleY, 1); 
-    
     wrapper.style.transform = `scale(${scale})`;
 }
 
@@ -511,6 +576,8 @@ function updateUI() {
     } else {
         fsCounter.style.display = 'none';
     }
+    
+    saveGameData(); // UI更新のタイミングで常にセーブ
 }
 
 function showCurrentSpinWin(amount, isBomb = false, bombMult = 1, finalAmount = 0) {
@@ -550,7 +617,6 @@ function getPos(col, row) {
 }
 
 function getRandomSymbol() {
-    // FS中は約5%、通常時は0.8%
     let bombChance = state.isFreeSpinMode ? 0.05 : 0.008;
     if(Math.random() < bombChance) {
         let mult = BOMB_MULTIPLIERS[Math.floor(Math.random() * BOMB_MULTIPLIERS.length)];
@@ -663,7 +729,6 @@ async function processCascade() {
     let matchData = findMatches();
     if(matchData.cells.length === 0) return false; 
     
-    // リアルタイムに当該スピンの獲得を加算・表示
     state.spinWin += matchData.win;
     showCurrentSpinWin(state.spinWin);
     
@@ -757,7 +822,7 @@ async function processBombs() {
         let finalAmount = state.spinWin * totalMultiplier;
         showCurrentSpinWin(state.spinWin, true, totalMultiplier, finalAmount);
         state.spinWin = finalAmount;
-        await sleep(1500); // プレイヤーに倍率計算の結果をしっかり見せる
+        await sleep(1500); 
     }
 }
 
@@ -806,14 +871,12 @@ async function playSpinRound(forceScatters = false) {
             state.balance += state.spinWin;
         }
         
-        // 調整4: ポップアップ通知はベット額の10倍以上（BIG WIN）の時だけ出す
         let isBigWin = state.spinWin >= state.bet * 10;
         
         if(isBigWin) {
             spawnCoinShower();
             await showMessage(`BIG WIN!<br>${formatCurrency(state.spinWin)}`, 2500);
         } else {
-            // フリースピン中はショボWin報告をカット（サクサク進む）
             if (!state.isFreeSpinMode) {
                 await showMessage(`WIN<br>${formatCurrency(state.spinWin)}`, 1000);
             }
@@ -834,7 +897,7 @@ async function playSpinRound(forceScatters = false) {
     }
     
     updateUI();
-    hideCurrentSpinWin(); // スピン終了時にバーを隠す
+    hideCurrentSpinWin(); 
 }
 
 async function startSpin(isBuy = false) {
@@ -867,7 +930,7 @@ async function startSpin(isBuy = false) {
         await playSpinRound(false);
         
         if(state.isFreeSpinMode && state.freeSpins > 0) {
-            await sleep(800); // テンポアップ
+            await sleep(800); 
         }
     }
     
@@ -880,12 +943,15 @@ async function startSpin(isBuy = false) {
     
     state.isSpinning = false;
     updateUI();
+    checkRescue(); // スピン終了時に破産チェック
 }
 
 spinBtn.onclick = () => startSpin(false);
 buyBtn.onclick = () => startSpin(true);
 
+// 初回起動時のUI更新と破産チェック
 updateUI();
+checkRescue();
 
 </script>
 </body>
